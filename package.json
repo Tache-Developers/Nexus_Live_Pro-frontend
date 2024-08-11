@@ -1,0 +1,29 @@
+{
+    "name": "Nexus_Live_Pro-frontend",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite --host",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@chenfengyuan/vue-countdown": "^2.1.2",
+        "axios": "^1.6.5",
+        "markdown-it": "^14.1.0",
+        "phaser": "^3.70.0",
+        "pinia": "^2.1.7",
+        "primeflex": "^3.3.1",
+        "primeicons": "^6.0.1",
+        "primevue": "^3.46.0",
+        "socket.io-client": "^4.7.4",
+        "vue": "^3.4.14",
+        "vue-router": "^4.2.5",
+        "vue3-carousel": "^0.3.3"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^4.5.2",
+        "vite": "^5.0.8"
+    }
+}
