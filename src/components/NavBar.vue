@@ -1,5 +1,19 @@
 <template>
 	<div class="navbar">
+		<header class="w-full m-0">
+			<nav class="w-full justify-content-center flex-wrap">
+				<router-link to="/">Inicio</router-link>
+				<router-link to="/">Acerca de</router-link>
+				<router-link to="/evento">Eventos</router-link>
+				<router-link to="/">Videos</router-link>
+				<router-link to="/">Podcast</router-link>
+				<router-link to="/">Contacto</router-link>
+				<router-link to="/">Lista de programas</router-link>
+				<router-link to="/">Grupos</router-link>
+				<!-- <Button icon="pi pi-bars" class="botonMenu" text size="large" @click="visibleSidebar = true" />
+			 -->
+			</nav>
+		</header>
 		<video src="/assets/video/banner/fondo_banner.mp4" autoplay muted loop class="fondo_banner">
 			<source src="/assets/video/banner/fondo_banner.mp4" type="video/mp4" />
 		</video>
@@ -18,20 +32,7 @@
 				</template>
 			</Menu>
 		</Sidebar> -->
-		<header class="w-full m-0">
-			<nav class="w-full justify-content-center flex-wrap">
-				<router-link to="/">Inicio</router-link>
-				<router-link to="/">Acerca de</router-link>
-				<router-link to="/evento">Eventos</router-link>
-				<router-link to="/">Videos</router-link>
-				<router-link to="/">Podcast</router-link>
-				<router-link to="/">Contacto</router-link>
-				<router-link to="/">Lista de programas</router-link>
-				<router-link to="/">Grupos</router-link>
-				<!-- <Button icon="pi pi-bars" class="botonMenu" text size="large" @click="visibleSidebar = true" />
-			 -->
-			</nav>
-		</header>
+
 		<!-- <div class="container-linea flex sm:justify-content-start md:justify-content-end w-full">
 			<div class="linea xs:w-full sm:w-full md:w-6"></div>
 		</div> -->
