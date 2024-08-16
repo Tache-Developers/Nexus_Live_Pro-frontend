@@ -18,6 +18,7 @@ import Footer from './components/Footer.vue';
 import Phone from './components/Phone.vue';
 import Insignias from './components/Insignias.vue';
 import CajaSorpresa from './components/CajaSorpresa.vue';
+import TopCreador from './components/TopCreador.vue';
 
 import AutoComplete from 'primevue/autocomplete';
 import Accordion from 'primevue/accordion';
@@ -121,6 +122,7 @@ import VirtualScroller from 'primevue/virtualscroller';
 
 //Carousel vue3-carousel
 import { Carousel, Slide, Pagination, Navigation } from 'vue3-carousel';
+import axios from 'axios';
 const app = createApp(App);
 
 app.component('VueCarousel', Carousel);
@@ -152,6 +154,7 @@ app.use(PrimeVue, {
     }
 });
 
+app.component('TopCreador', TopCreador);
 app.component('AppBar', AppBar);
 app.component('NavBar', NavBar);
 app.component('Clasificacion', Clasificacion);

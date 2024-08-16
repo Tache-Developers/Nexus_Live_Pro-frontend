@@ -10,11 +10,13 @@
 				<router-link to="/">Contacto</router-link>
 				<router-link to="/">Lista de programas</router-link>
 				<router-link to="/">Grupos</router-link>
+				<router-link to="/login">Login</router-link>
 				<!-- <Button icon="pi pi-bars" class="botonMenu" text size="large" @click="visibleSidebar = true" />
 			 -->
 			</nav>
 		</header>
-		<video src="/assets/video/banner/fondo_banner.mp4" autoplay muted loop class="fondo_banner">
+		<TopCreador class="top-1-navBar" :top="1" :nombre="clasificados[0].usuario" :foto="clasificados[0].foto" />
+		<video src="/assets/video/banner/fondo_banner.mp4" autoplay muted class="fondo_banner">
 			<source src="/assets/video/banner/fondo_banner.mp4" type="video/mp4" />
 		</video>
 		<!-- <Sidebar v-model:visible="visibleSidebar">
@@ -39,8 +41,10 @@
 	</div>
 </template>
 <script>
+import axios from "axios";
 export default {
 	data: () => ({
+		API: import.meta.env.VITE_APP_API,
 		visibleSidebar: false,
 		itemsMenu: [
 			{
@@ -100,7 +104,28 @@ export default {
 				],
 			},
 		],
+		clasificados: [
+			{
+				usuario: "x",
+				foto: "/assets/img/perfil1.jpg",
+			},
+			{
+				usuario: "x",
+				foto: "",
+			},
+			{
+				usuario: "x",
+				foto: "",
+			},
+		],
 	}),
+	async created() {
+		await axios.get(`${this.API}/usuario/top`).then((resp) => {
+			if (resp.data.length > 0) {
+				this.clasificados = resp.data;
+			}
+		});
+	},
 };
 </script>
 <style scoped>
@@ -119,6 +144,26 @@ header {
 	height: max-content;
 }
 
+.top-1-navBar {
+	opacity: 0;
+	animation: fadeIn 4s forwards;
+	animation-delay: 7s;
+}
+
+@keyframes fadeIn {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+.fondo_banner {
+	height: 500px;
+	width: 100%;
+	object-fit: fill;
+}
 .container-linea {
 	position: relative;
 	top: -4px;
@@ -132,17 +177,6 @@ header {
 	height: 4px;
 }
 
-header .logo {
-	color: #fff;
-	font-size: 2em;
-	font-weight: 700;
-	text-decoration: none;
-}
-
-header .logo span {
-	color: #84dc16;
-}
-
 header nav {
 	display: flex;
 	gap: 15px;
@@ -151,16 +185,25 @@ header nav {
 .botonMenu {
 	display: none;
 }
-@media (max-width: 960px) {
-	header .logo {
-		font-size: 1.5em;
+
+@media (max-width: 1000px) {
+	.top-1-navBar {
+		top: 80px !important;
+	}
+	.fondo_banner {
+		height: 600px;
 	}
 }
-@media (max-width: 865px) {
-	header .logo {
-		font-size: 1.2em;
+
+@media (max-width: 907px) {
+	.top-1-navBar {
+		top: 140px !important;
+	}
+	.fondo_banner {
+		height: 650px;
 	}
 }
+
 @media (max-width: 739px) {
 	/* header nav a {
 		display: none;
@@ -171,10 +214,37 @@ header nav {
 	}
 }
 
+@media (max-width: 364px) {
+	.top-1-navBar {
+		top: 180px !important;
+	}
+}
+
+@media (max-width: 291px) {
+	.top-1-navBar {
+		top: 245px !important;
+	}
+}
+
+@media (max-width: 250px) {
+	.top-1-navBar {
+		width: 90% !important;
+		left: 6% !important;
+	}
+}
+
 header nav a {
 	color: #fff;
 	font-weight: bold;
 	font-size: 1.2em;
 	text-decoration: none;
+}
+</style>
+
+<style>
+@media (max-width: 250px) {
+	.top-1-navBar > .marco {
+		padding: 24px 15px 34px 16px !important;
+	}
 }
 </style>

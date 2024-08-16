@@ -2,7 +2,7 @@
   <div class="game">
     <Toast />
     <div class="form-container" v-show="form">
-      <p class="title">SAMYFLW</p>
+      <p class="title">Nexus Live Pro</p>
       <div class="form">
         <div class="input-group">
           <label for="username">Usuario</label>
@@ -145,7 +145,7 @@ export default {
       })
       this.btnDisable = false;
       if (!exist) {
-        this.toast.add({ severity: 'error', summary: 'Usuario No Registrado!', detail: 'Comuniquese con la agencia samyflw', life: 5000 });
+        this.toast.add({ severity: 'error', summary: 'Usuario No Registrado!', detail: 'Comuníquese con la agencia Nexus Live Pro', life: 5000 });
         return;
       }
       this.form = false;

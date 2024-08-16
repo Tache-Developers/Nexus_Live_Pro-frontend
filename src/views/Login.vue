@@ -227,7 +227,7 @@
                 <div class="w-full flex justify-content-center">
                     <Avatar image="/assets/img/logo-samyflw.png" size="xlarge" shape="circle" />
                 </div>
-                <p class="title m-0"><span class="verde">SAMY</span>FLW</p>
+                <p class="title m-0"><span class="verde">Nexus</span>Live Pro</p>
                 <div class="form">
                     <div class="input-group">
                         <!-- <input v-model="user" class="input" type="text" name="username" id="username" placeholder="USUARIO">

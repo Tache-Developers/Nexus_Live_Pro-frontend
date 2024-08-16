@@ -226,14 +226,7 @@ export default {
 			},
 		],
 	}),
-	async created() {
-		/* await axios.get(`${this.API}/regla-actualizacion/nuevas`).then((resp) => {
-			this.novedades = resp.data;
-		});
-		await axios.get(`${this.API}/usuario/homeCreadores`).then((resp) => {
-			this.clasificados = resp.data;
-		}); */
-	},
+	async created() {},
 };
 </script>
 

@@ -3,11 +3,6 @@
 		<Toast />
 		<Sidebar v-model:visible="visibleSidebar">
 			<Menu :model="itemsMenu" class="w-full">
-				<!-- <template #start>
-                    <span class="inline-flex items-center gap-1 px-2 py-2 w-full sm:w-[15rem]">
-                        <span class="text-2xl font-bold logo"><span>Samy</span>flw</span>
-                    </span>
-                </template> -->
 
 				<template #submenuheader="{ item }">
 					<span class="text-primary-500 dark:text-primary-400 font-bold leading-none">{{ item.label }}</span>
@@ -29,8 +24,8 @@
 					<Button icon="pi pi-bars" text size="large" @click="visibleSidebar = true" />
 					<a href="/" style="text-decoration: none">
 						<span class="text-2xl font-bold logo">
-							<span>Samy</span>
-							flw
+							<span>Nexus</span>
+							Live Pro
 						</span>
 					</a>
 				</div>
