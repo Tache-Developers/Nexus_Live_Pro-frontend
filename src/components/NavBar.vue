@@ -119,10 +119,18 @@ export default {
 			},
 		],
 	}),
-	async created() {
+	async mounted() {
 		await axios.get(`${this.API}/usuario/top`).then((resp) => {
 			if (resp.data.length > 0) {
-				this.clasificados = resp.data;
+				const usuarios = resp.data.flatMap((grupo) => grupo.usuarios);
+				usuarios.sort((a, b) => b.diamantes_mes_actual - a.diamantes_mes_actual);
+
+				this.clasificados[0].foto = usuarios[0].foto;
+				this.clasificados[0].usuario = usuarios[0].usuario;
+				this.clasificados[1].foto = usuarios[1].foto;
+				this.clasificados[1].usuario = usuarios[1].usuario;
+				this.clasificados[2].foto = usuarios[2].foto;
+				this.clasificados[2].usuario = usuarios[2].usuario;
 			}
 		});
 	},
