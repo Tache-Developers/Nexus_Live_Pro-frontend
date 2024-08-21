@@ -5,9 +5,9 @@
 		</div>
 		<p
 			class="font-bold text-center m-0 descripcion-top"
-			style="color: #7c2ce0 !important; -webkit-text-stroke: 1px black; text-stroke: 1px black;"
+			style="color: #7c2ce0 !important; text-shadow: 2px 2px 0px #000000, -2px -2px 0px #000000, -2px 2px 0px #000000, 2px -2px 0px #000000"
 		>
-			TOP {{ top }}
+		TOP {{ top }}
 		</p>
 		<div class="nombre-usuario font-bold">
 			<p class="m-0">{{ nombre }}</p>
