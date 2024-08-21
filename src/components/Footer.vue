@@ -32,8 +32,15 @@
 			</Carousel>
 		</div>
 		<div class="flex gap-3 justify-content-center flex-wrap">
-			<a v-for="(red, index) in redes" :key="index" :href="red.ruta" target="_blank" rel="noopener noreferrer">
-				<img :src="red.imagen" class="img-fluid" alt="Red" />
+			<a
+				v-for="(red, index) in redes"
+				:key="index"
+				:href="red.ruta"
+				:title="`Charlar por ${red.title}`"
+				target="_blank"
+				rel="noopener noreferrer"
+			>
+				<img :src="red.imagen" class="img-fluid" :alt="red.title" />
 			</a>
 		</div>
 		<div class="politicas text-center font-bold text-black-alpha-90 flex align-items-center justify-content-center flex-wrap gap-1">
@@ -70,12 +77,10 @@ export default {
 			},
 		],
 		redes: [
-			{ ruta: "#", imagen: "/assets/img/footer/face.png" },
-			{ ruta: "#", imagen: "/assets/img/footer/x.png" },
-			{ ruta: "#", imagen: "/assets/img/footer/ins.png" },
-			{ ruta: "#", imagen: "/assets/img/footer/yt.png" },
-			{ ruta: "#", imagen: "/assets/img/footer/tiktok.png" },
-			{ ruta: "#", imagen: "/assets/img/footer/what.png" },
+			{ title: "Facebook", ruta: "https://www.facebook.com/nexuslivepro", imagen: "/assets/img/footer/face.png" },
+			{ title: "Instagram", ruta: "https://www.instagram.com/nexuslivepro", imagen: "/assets/img/footer/ins.png" },
+			{ title: "TikTok", ruta: "https://www.tiktok.com/@nexuslivepro", imagen: "/assets/img/footer/tiktok.png" },
+			{ title: "WhatsApp", ruta: "https://walink.co/239ecd", imagen: "/assets/img/footer/what.png" },
 		],
 	}),
 };

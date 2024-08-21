@@ -3,7 +3,12 @@
 		<div class="marco">
 			<img :src="foto" alt="Foto usuario" class="foto-usuario" />
 		</div>
-		<p class="font-bold text-white text-center m-0 descripcion-top">TOP {{ top }}</p>
+		<p
+			class="font-bold text-center m-0 descripcion-top"
+			style="color: #7c2ce0 !important; -webkit-text-stroke: 1px black; text-stroke: 1px black;"
+		>
+			TOP {{ top }}
+		</p>
 		<div class="nombre-usuario font-bold">
 			<p class="m-0">{{ nombre }}</p>
 		</div>
@@ -40,6 +45,7 @@ export default {
 	height: 250px;
 	width: 250px;
 	z-index: 99;
+	font-size: 22px !important;
 }
 
 .top-creador > .marco {
