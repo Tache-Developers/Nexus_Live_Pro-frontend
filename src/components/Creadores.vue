@@ -422,8 +422,6 @@ export default {
 								break;
 						}
 					});
-				await axios.get(`${this.API}/bonus/definirBonus`);
-				await axios.get(`${this.API}/bonus-categoria/definir/ganadores`);
 			} else {
 				this.$toast.add({
 					severity: "info",
