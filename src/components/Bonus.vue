@@ -1968,7 +1968,9 @@ export default {
 			await this.getMisPremiosActuales();
 			await this.getUsuario();
 			this.estadisticas.dias = parseInt(this.usuario.dias_validos_mes_actual);
-			this.estadisticas.horas = parseInt(this.usuario.last_live_duration_mes_actual.split("h")[0]);
+			this.estadisticas.horas = this.usuario.last_live_duration_mes_actual.includes("h")
+				? parseInt(this.usuario.last_live_duration_mes_actual.split("h")[0])
+				: 0;
 			this.estadisticas.diamantes = parseInt(this.usuario.diamantes_mes_actual);
 			//axios.get(`${this.API}/bonus/definirBonus`);
 		} else {
