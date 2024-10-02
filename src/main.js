@@ -119,10 +119,10 @@ import TreeSelect from 'primevue/treeselect';
 import TreeTable from 'primevue/treetable';
 import TriStateCheckbox from 'primevue/tristatecheckbox';
 import VirtualScroller from 'primevue/virtualscroller';
+import ListaRegalos from "./components/ListaRegalos.vue";
 
 //Carousel vue3-carousel
 import { Carousel, Slide, Pagination, Navigation } from 'vue3-carousel';
-import axios from 'axios';
 const app = createApp(App);
 
 app.component('VueCarousel', Carousel);
@@ -162,6 +162,7 @@ app.component('Footer', Footer);
 app.component('Phone', Phone);
 app.component('Insignias', Insignias);
 app.component('CajaSorpresa', CajaSorpresa);
+app.component("ListaRegalos", ListaRegalos);
 app.use(ConfirmationService);
 app.use(ToastService);
 app.use(DialogService);

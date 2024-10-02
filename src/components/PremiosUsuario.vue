@@ -2,8 +2,20 @@
 	<Panel class="premios">
 		<Toast />
 		<template #header>
-			<div class="flex items-center gap-2 flex-end w-full justify-content-between">
+			<div class="flex flex-wrap items-center gap-2 flex-end w-full justify-content-between">
 				<h1 class="m-0">Mis premios</h1>
+				<Message severity="info" class="m-0" :closable="false">
+					<div class="flex flex-wrap align-items-center gap-2">
+						<p class="m-0">
+							Ahora puedes canjear tus
+							<strong>Bonus</strong>
+							por
+							<strong>Regalos</strong>
+							con el botón:
+						</p>
+						<Button class="btn_regalo" severity="danger" icon="pi pi-gift" />
+					</div>
+				</Message>
 			</div>
 		</template>
 
@@ -53,29 +65,50 @@
 			</Column>
 			<Column header="Acciones">
 				<template #body="slotProps">
-					<Button
-						v-if="puedeReclamar(slotProps.data.estado, slotProps.data.fecha_obtenido)"
-						icon="pi pi-send"
-						@click="
-							() => {
-								Reclamar(
-									slotProps.data.tipo_premio,
-									slotProps.data.id_concurso,
-									slotProps.data.estado,
-									slotProps.data.premio,
-									slotProps.data.descripcion
-								);
-							}
-						"
-					/>
-					<Image
-						v-tooltip.top="'Comprobante de entrega'"
-						v-if="slotProps.data.estado == 'Entregado' && slotProps.data.tipo_premio != 'SaldoApi'"
-						:src="slotProps.data.transferencia.comprobante"
-						alt="Imagen del premio"
-						width="50"
-						preview
-					/>
+					<div class="flex gap-2 flex-wrap">
+						<Button
+							class="btn_regalo"
+							severity="danger"
+							v-tooltip.top="'Canjear por regalos'"
+							v-if="puedeReclamar(slotProps.data.estado, slotProps.data.fecha_obtenido) && slotProps.data.tipo_premio == 'Bonus'"
+							icon="pi pi-gift"
+							@click="mostrarListaRegalo(slotProps.data)"
+						/>
+						<Button
+							v-if="puedeReclamar(slotProps.data.estado, slotProps.data.fecha_obtenido)"
+							icon="pi pi-send"
+							@click="
+								() => {
+									Reclamar(
+										slotProps.data.tipo_premio,
+										slotProps.data.id_concurso,
+										slotProps.data.estado,
+										slotProps.data.premio,
+										slotProps.data.descripcion
+									);
+								}
+							"
+						/>
+						<div v-if="slotProps.data.estado == 'Entregado' && slotProps.data.tipo_premio != 'SaldoApi'">
+							<Image
+								v-tooltip.top="'Comprobante de entrega'"
+								v-if="isImg(slotProps.data.transferencia.comprobante)"
+								:src="slotProps.data.transferencia.comprobante"
+								alt="Imagen del premio"
+								width="50"
+								preview
+							/>
+							<video
+								v-else
+								width="50"
+								class="cursor-pointer"
+								@click="fullScreenVideo"
+								v-tooltip.top="'Click para ver el vídeo de la compra'"
+								:src="slotProps.data.transferencia.comprobante"
+								muted
+							/>
+						</div>
+					</div>
 				</template>
 			</Column>
 		</DataTable>
@@ -200,6 +233,7 @@
 				}
 			"
 		/>
+		<ListaRegalos v-bind="dataListaRegalo" @cerrarDialog="dataListaRegalo.mostrarLista = false" @regalos="canjearPorRegalos" />
 	</Panel>
 </template>
 <script>
@@ -427,8 +461,40 @@ export default {
 			tipo_premio: null,
 			id_concurso: null,
 		},
+		dataListaRegalo: {
+			mostrarLista: false,
+			monedasMaximasRegalo: 0,
+		},
 	}),
 	methods: {
+		mostrarListaRegalo(bono = null) {
+			if (bono != null) {
+				this.dataListaRegalo.monedasMaximasRegalo = parseInt(bono.premio.match(/\d+/)) * 100;
+				this.transferencia.usuario = this.usuario;
+				this.transferencia.posPremio = bono.id_concurso;
+				this.transferencia.metodo_pago = "regalo";
+				this.dataListaRegalo.mostrarLista = true;
+			}
+		},
+		fullScreenVideo(event) {
+			const elem = event.target;
+
+			if (elem.requestFullscreen) {
+				elem.requestFullscreen();
+			} else if (elem.mozRequestFullScreen) {
+				/* Firefox */
+				elem.mozRequestFullScreen();
+			} else if (elem.webkitRequestFullscreen) {
+				/* Chrome, Safari & Opera */
+				elem.webkitRequestFullscreen();
+			} else if (elem.msRequestFullscreen) {
+				/* IE/Edge */
+				elem.msRequestFullscreen();
+			}
+		},
+		isImg(ruta = "") {
+			return ruta.match(/\.(jpeg|jpg|png|gif)$/) != null;
+		},
 		async getPremios() {
 			await axios
 				.get(`${this.API}/usuario/${this.usuario}`, this.token)
@@ -604,6 +670,60 @@ export default {
 				}
 			}
 		},
+		async canjearPorRegalos(regalos = []) {
+			this.dataListaRegalo.mostrarLista = false;
+			if (regalos.length > 0) {
+				await axios
+					.put(
+						`${this.API}/usuario/reclamarPremio`,
+						{ ...this.transferencia, regalos },
+						{
+							headers: {
+								Authorization: `Bearer ${this.store.getToken()}`,
+							},
+						}
+					)
+					.then((resp) => {
+						if (!resp.data.error) {
+							this.getPremios();
+							this.transferencia = {};
+						}
+						this.$toast.add({
+							severity: resp.data.error ? "error" : "success",
+							summary: "Reclamar regalo",
+							detail: resp.data.message,
+							life: 1600,
+						});
+					})
+					.catch((error) => {
+						switch (error.response.data.statusCode) {
+							case 400:
+								//Bad Request
+								this.$toast.add({
+									severity: "error",
+									summary: "Reclamar regalo",
+									detail: "Formato de los datos incorrecto",
+									life: 1600,
+								});
+								break;
+							case 401:
+								//Se le termino la sesión
+								this.store.clearUser();
+								this.$router.push("/login");
+								break;
+							default:
+								this.$toast.add({
+									severity: "error",
+									summary: "Reclamar regalo",
+									detail: "Sucedió un error, comuníquese con soporte",
+									life: 1600,
+								});
+								console.log("Error: ", error);
+								break;
+						}
+					});
+			}
+		},
 	},
 
 	async created() {
@@ -625,5 +745,40 @@ export default {
 <style>
 .p-inputnumber-input {
 	width: 100% !important;
+}
+
+.btn_regalo {
+	animation: sacudir 2s ease infinite;
+}
+@keyframes sacudir {
+	from {
+		transform: rotate(0deg);
+	}
+	4% {
+		transform: rotate(7deg);
+	}
+	12.5% {
+		transform: rotate(-7deg);
+	}
+	21% {
+		transform: rotate(7deg);
+	}
+	25% {
+	}
+	29% {
+		transform: rotate(-7deg);
+	}
+	37.5% {
+		transform: rotate(7deg);
+	}
+	46% {
+		transform: rotate(-7deg);
+	}
+	50% {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(0deg);
+	}
 }
 </style>

@@ -3,7 +3,6 @@
 		<Toast />
 		<Sidebar v-model:visible="visibleSidebar">
 			<Menu :model="itemsMenu" class="w-full">
-
 				<template #submenuheader="{ item }">
 					<span class="text-primary-500 dark:text-primary-400 font-bold leading-none">{{ item.label }}</span>
 				</template>
@@ -381,6 +380,11 @@ export default {
 							label: "Gestionar Promoción",
 							icon: "pi pi-thumbs-up-fill",
 							route: "/panel/promocion",
+						},
+						{
+							label: "Regalos",
+							icon: "pi pi-gift",
+							route: "/panel/regalos",
 						},
 						{
 							label: "Agregar creadores",

@@ -22,7 +22,7 @@
 		>
 			<Column field="tipo_premio" header="Tipo premio" sortable />
 			<Column field="nombre" header="Usuario" sortable></Column>
-			<Column field="transferencia.metodo_pago" header="Metodo" sortable></Column>
+			<Column field="transferencia.metodo_pago" class="metodo_pago" header="Metodo" sortable></Column>
 			<Column field="premio" header="Premio">
 				<template #body="slotProps">
 					<p class="m-0" v-if="slotProps.data.tipo_premio !== 'Objeto'">{{ slotProps.data.premio }}</p>
@@ -92,14 +92,25 @@
 							@click="confirmarEliminar(slotProps.data.usuario, slotProps.data.id_concurso, slotProps.data.fecha_unica)"
 						/>
 					</div>
-					<Image
-						v-tooltip.top="'Comprobante de entrega'"
-						v-if="slotProps.data.estado == 'Entregado' && slotProps.data.tipo_premio != 'SaldoApi'"
-						:src="slotProps.data.transferencia.comprobante"
-						alt="Imagen del premio"
-						width="50"
-						preview
-					/>
+					<div v-if="slotProps.data.estado == 'Entregado' && slotProps.data.tipo_premio != 'SaldoApi'">
+						<Image
+							v-tooltip.top="'Comprobante de entrega'"
+							v-if="isImg(slotProps.data.transferencia.comprobante)"
+							:src="slotProps.data.transferencia.comprobante"
+							alt="Imagen del premio"
+							width="50"
+							preview
+						/>
+						<video
+							v-else
+							width="50"
+							@click="fullScreenVideo"
+							v-tooltip.top="'Click para ver el vídeo de la compra'"
+							:src="slotProps.data.transferencia.comprobante"
+							muted
+							class="cursor-pointer"
+						/>
+					</div>
 				</template>
 			</Column>
 		</DataTable>
@@ -108,93 +119,166 @@
 			:header="`Pago: ${
 				datosTransferencia.transferencia.metodo_pago != null ? datosTransferencia.transferencia.metodo_pago.toUpperCase() : ''
 			}`"
+			:maximizable="datosTransferencia.transferencia.metodo_pago == 'regalo'"
 			:style="{ width: '40rem' }"
 			:breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
 			position="center"
 			:modal="true"
 			:draggable="false"
 		>
-			<div v-if="datosTransferencia.tipo_premio === 'Efectivo' || datosTransferencia.tipo_premio == 'Bonus'">
-				<div class="flex gap-2 sm:flex-column md:flex-row" v-if="datosTransferencia.transferencia.metodo_pago === 'banco'">
-					<div class="flex flex-column gap-2 w-6 sm:w-full md:w-6">
-						<label class="font-semibold">Tipo de cuenta</label>
-						<InputText disabled v-model="datosTransferencia.transferencia.tipo_cuenta.tipo" class="flex-auto" autocomplete="off" />
+			<div v-if="datosTransferencia.transferencia.metodo_pago != 'regalo'">
+				<div v-if="datosTransferencia.tipo_premio === 'Efectivo' || datosTransferencia.tipo_premio == 'Bonus'">
+					<div class="flex gap-2 sm:flex-column md:flex-row" v-if="datosTransferencia.transferencia.metodo_pago === 'banco'">
+						<div class="flex flex-column gap-2 w-6 sm:w-full md:w-6">
+							<label class="font-semibold">Tipo de cuenta</label>
+							<InputText disabled v-model="datosTransferencia.transferencia.tipo_cuenta.tipo" class="flex-auto" autocomplete="off" />
+						</div>
+						<div class="flex flex-column gap-2 w-6 sm:w-full md:w-6">
+							<label class="font-semibold">Número de cuenta</label>
+							<InputText disabled v-model="datosTransferencia.transferencia.cuenta" class="flex-auto" autocomplete="off" />
+						</div>
 					</div>
-					<div class="flex flex-column gap-2 w-6 sm:w-full md:w-6">
-						<label class="font-semibold">Número de cuenta</label>
+					<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'nequi'">
+						<label class="font-semibold">Cuenta Nequi</label>
+						<InlineMessage severity="info">{{ datosTransferencia.transferencia.cuenta }}</InlineMessage>
+					</div>
+					<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'paypal'">
+						<label class="font-semibold">Correo PayPal</label>
+						<InputText disabled v-model="datosTransferencia.transferencia.cuenta" class="flex-auto" autocomplete="off" />
+					</div>
+
+					<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'banco'">
+						<label class="font-semibold">Banco</label>
+						<InputText disabled v-model="datosTransferencia.transferencia.banco" class="flex-auto" autocomplete="off" />
+					</div>
+					<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'banco'">
+						<label class="font-semibold">Titular</label>
+						<InputText disabled v-model="datosTransferencia.transferencia.titular_cuenta" class="flex-auto" autocomplete="off" />
+					</div>
+					<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'banco'">
+						<label class="font-semibold">Cédula</label>
+						<InputText disabled v-model="datosTransferencia.transferencia.cedula" class="flex-auto" autocomplete="off" />
+					</div>
+					<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'binance'">
+						<label class="font-semibold">ID Binance</label>
 						<InputText disabled v-model="datosTransferencia.transferencia.cuenta" class="flex-auto" autocomplete="off" />
 					</div>
 				</div>
-				<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'nequi'">
-					<label class="font-semibold">Cuenta Nequi</label>
-					<InlineMessage severity="info">{{ datosTransferencia.transferencia.cuenta }}</InlineMessage>
-				</div>
-				<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'paypal'">
-					<label class="font-semibold">Correo PayPal</label>
-					<InputText disabled v-model="datosTransferencia.transferencia.cuenta" class="flex-auto" autocomplete="off" />
-				</div>
+				<div v-if="datosTransferencia.transferencia.metodo_pago === 'Envio'">
+					<div class="flex flex-column gap-2">
+						<label class="font-semibold">Cédula</label>
+						<InputText disabled v-model="datosTransferencia.transferencia.cedula" class="flex-auto" autocomplete="off" />
+					</div>
+					<div class="flex flex-column gap-2">
+						<label class="font-semibold">Nombre receptor</label>
+						<InputText disabled v-model="datosTransferencia.transferencia.titular_cuenta" class="flex-auto" autocomplete="off" />
+					</div>
+					<div class="flex flex-column gap-2 w-full">
+						<label class="font-semibold">País</label>
+						<InputText disabled v-model="datosTransferencia.transferencia.pais" class="flex-auto" autocomplete="off" />
+					</div>
+					<div class="flex gap-2 xs:flex-column sm:flex-column md:flex-row">
+						<div class="flex flex-column gap-2 xs:w-full sm:w-full md:w-6">
+							<label class="font-semibold">Departamento</label>
+							<InputText disabled v-model="datosTransferencia.transferencia.departamento" class="flex-auto" autocomplete="off" />
+						</div>
+						<div class="flex flex-column gap-2 sm:w-full md:w-6">
+							<label class="font-semibold">Ciudad</label>
+							<InputText disabled v-model="datosTransferencia.transferencia.ciudad" class="flex-auto" autocomplete="off" />
+						</div>
+					</div>
+					<div class="flex flex-column gap-2">
+						<label class="font-semibold">Dirección</label>
+						<InputText disabled v-model="datosTransferencia.transferencia.direccion" class="flex-auto" autocomplete="off" />
+					</div>
 
-				<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'banco'">
-					<label class="font-semibold">Banco</label>
-					<InputText disabled v-model="datosTransferencia.transferencia.banco" class="flex-auto" autocomplete="off" />
-				</div>
-				<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'banco'">
-					<label class="font-semibold">Titular</label>
-					<InputText disabled v-model="datosTransferencia.transferencia.titular_cuenta" class="flex-auto" autocomplete="off" />
-				</div>
-				<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'banco'">
-					<label class="font-semibold">Cédula</label>
-					<InputText disabled v-model="datosTransferencia.transferencia.cedula" class="flex-auto" autocomplete="off" />
-				</div>
-				<div class="flex flex-column gap-2" v-if="datosTransferencia.transferencia.metodo_pago === 'binance'">
-					<label class="font-semibold">ID Binance</label>
-					<InputText disabled v-model="datosTransferencia.transferencia.cuenta" class="flex-auto" autocomplete="off" />
+					<div class="flex flex-column gap-2">
+						<label class="font-semibold">Teléfono</label>
+						<InputText disabled v-model="datosTransferencia.transferencia.telefono" class="flex-auto" autocomplete="off" />
+					</div>
+					<div class="flex flex-column gap-2">
+						<label class="font-semibold">Código postal</label>
+						<InputText disabled v-model="datosTransferencia.transferencia.codigo_postal" class="flex-auto" autocomplete="off" />
+					</div>
 				</div>
 			</div>
-			<div v-if="datosTransferencia.transferencia.metodo_pago === 'Envio'">
-				<div class="flex flex-column gap-2">
-					<label class="font-semibold">Cédula</label>
-					<InputText disabled v-model="datosTransferencia.transferencia.cedula" class="flex-auto" autocomplete="off" />
-				</div>
-				<div class="flex flex-column gap-2">
-					<label class="font-semibold">Nombre receptor</label>
-					<InputText disabled v-model="datosTransferencia.transferencia.titular_cuenta" class="flex-auto" autocomplete="off" />
-				</div>
-				<div class="flex flex-column gap-2 w-full">
-					<label class="font-semibold">País</label>
-					<InputText disabled v-model="datosTransferencia.transferencia.pais" class="flex-auto" autocomplete="off" />
-				</div>
-				<div class="flex gap-2 xs:flex-column sm:flex-column md:flex-row">
-					<div class="flex flex-column gap-2 xs:w-full sm:w-full md:w-6">
-						<label class="font-semibold">Departamento</label>
-						<InputText disabled v-model="datosTransferencia.transferencia.departamento" class="flex-auto" autocomplete="off" />
-					</div>
-					<div class="flex flex-column gap-2 sm:w-full md:w-6">
-						<label class="font-semibold">Ciudad</label>
-						<InputText disabled v-model="datosTransferencia.transferencia.ciudad" class="flex-auto" autocomplete="off" />
-					</div>
-				</div>
-				<div class="flex flex-column gap-2">
-					<label class="font-semibold">Dirección</label>
-					<InputText disabled v-model="datosTransferencia.transferencia.direccion" class="flex-auto" autocomplete="off" />
-				</div>
+			<div v-else>
+				<Galleria
+					ref="galleria"
+					v-model:activeIndex="activeIndex"
+					:value="datosTransferencia.transferencia.regalos"
+					:numVisible="5"
+					containerStyle="max-width: 100%; height: auto;"
+					:showThumbnails="showThumbnails"
+					:showItemNavigators="true"
+					:showItemNavigatorsOnHover="true"
+					:transitionInterval="3000"
+					:responsiveOptions="responsiveOptionsGallery"
+					:pt="{
+						root: {
+							class: [{ 'flex flex-column': fullScreen }],
+						},
+						content: {
+							class: ['relative gallery-slider', { 'flex-1 justify-content-center': fullScreen }],
+						},
 
-				<div class="flex flex-column gap-2">
-					<label class="font-semibold">Teléfono</label>
-					<InputText disabled v-model="datosTransferencia.transferencia.telefono" class="flex-auto" autocomplete="off" />
-				</div>
-				<div class="flex flex-column gap-2">
-					<label class="font-semibold">Código postal</label>
-					<InputText disabled v-model="datosTransferencia.transferencia.codigo_postal" class="flex-auto" autocomplete="off" />
-				</div>
+						thumbnailwrapper: 'absolute w-full left-0 bottom-0',
+					}"
+				>
+					<template #item="props">
+						<img
+							:src="props.item.imagen"
+							alt="Regalo"
+							:style="[{ width: '200px', height: '220px', display: !fullScreen ? 'block' : '', 'object-fit': 'contain' }]"
+						/>
+					</template>
+					<template #thumbnail="props">
+						<div class="grid grid-nogutter justify-content-center">
+							<img :src="props.item.imagen" alt="Regalo" style="width: 110px; display: block; height: 100px; object-fit: contain" />
+						</div>
+					</template>
+					<template #footer>
+						<div class="flex align-items-center bg-black-alpha-90 text-white">
+							<Button
+								icon="pi pi-list"
+								@click="onThumbnailButtonClick"
+								:pt="{ root: { class: 'border-none border-noround hover:bg-white-alpha-10 text-white', style: 'background: transparent' } }"
+							/>
+							<div class="flex align-items-center gap-2" v-if="datosTransferencia.transferencia.regalos">
+								<span class="text-sm">{{ activeIndex + 1 }}/{{ datosTransferencia.transferencia.regalos.length }}</span>
+								<span class="font-bold text-sm">{{ datosTransferencia.transferencia.regalos[activeIndex].descripcion }}</span>
+								<Chip
+									:label="`${datosTransferencia.transferencia.regalos[activeIndex].precio_monedas}`"
+									image="/assets/img/moneda_tiktok.png"
+									class="w-max"
+								/>
+							</div>
+							<Button
+								:icon="fullScreenIcon"
+								@click="toggleFullScreen"
+								:pt="{
+									root: {
+										class: 'border-none border-noround ml-auto hover:bg-white-alpha-10 text-white',
+										style: 'background: transparent',
+									},
+								}"
+							/>
+						</div>
+					</template>
+				</Galleria>
 			</div>
 			<div class="flex flex-column gap-2 mt-4">
 				<label class="font-semibold">Comprobante</label>
-				<InputText type="file" id="comprobante" accept="image/*" @change="(event) => (paquete.comprobante = event.target.files[0])" />
+				<InputText
+					type="file"
+					id="comprobante"
+					accept="image/*, video/*"
+					@change="(event) => (paquete.comprobante = event.target.files[0])"
+				/>
 			</div>
 			<template #footer>
 				<Button label="Cancelar" @click="EnviarModal = false" autofocus text severity="danger" />
-				<Button label="Entregar premio" @click="EnviarPremio"></Button>
+				<Button label="Entregar premio" :disabled="btnEnviarPremio" @click="EnviarPremio" />
 			</template>
 		</Dialog>
 		<ConfirmDialog />
@@ -212,6 +296,7 @@ export default {
 		servicios: [],
 		usuarios: null,
 		EnviarModal: false,
+		btnEnviarPremio: false,
 		filters: {
 			global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 		},
@@ -238,6 +323,19 @@ export default {
 				codigo_postal: null,
 			},
 		},
+		responsiveOptionsGallery: [
+			{
+				breakpoint: "1300px",
+				numVisible: 4,
+			},
+			{
+				breakpoint: "575px",
+				numVisible: 1,
+			},
+		],
+		activeIndex: 0,
+		showThumbnails: false,
+		fullScreen: false,
 	}),
 	methods: {
 		async getCreadores() {
@@ -312,14 +410,24 @@ export default {
 		},
 		async EnviarPremio() {
 			if (this.paquete.comprobante != null) {
+				this.btnEnviarPremio = true;
 				await axios
 					.putForm(`${this.API}/usuario/confirmarPremio`, this.paquete, {
 						headers: {
 							Authorization: `Bearer ${this.store.getToken()}`,
 						},
 					})
-					.then((response) => {
-						console.log(response.data);
+					.then((resp) => {
+						if (!resp.data.error) {
+							this.EnviarModal = false;
+							this.getCreadores();
+						}
+						this.$toast.add({
+							severity: resp.data.error ? "error" : "success",
+							summary: "Entregar premio",
+							detail: resp.data.message,
+							life: 1600,
+						});
 					})
 					.catch((error) => {
 						switch (error.response.data.statusCode) {
@@ -332,12 +440,8 @@ export default {
 								console.log("Error: ", error);
 								break;
 						}
-					})
-					.finally(() => {
-						this.EnviarModal = false;
-						this.$toast.add({ severity: "success", summary: "Reclamo exitoso", life: 1600 });
-						this.getCreadores();
 					});
+				this.btnEnviarPremio = false;
 			} else {
 				this.$toast.add({
 					severity: "error",
@@ -426,6 +530,77 @@ export default {
 				reject: () => {},
 			});
 		},
+		onThumbnailButtonClick() {
+			this.showThumbnails = !this.showThumbnails;
+		},
+		toggleFullScreen() {
+			if (this.fullScreen) {
+				this.closeFullScreen();
+			} else {
+				this.openFullScreen();
+			}
+		},
+		fullScreenVideo(event) {
+			const elem = event.target;
+
+			if (elem.requestFullscreen) {
+				elem.requestFullscreen();
+			} else if (elem.mozRequestFullScreen) {
+				/* Firefox */
+				elem.mozRequestFullScreen();
+			} else if (elem.webkitRequestFullscreen) {
+				/* Chrome, Safari & Opera */
+				elem.webkitRequestFullscreen();
+			} else if (elem.msRequestFullscreen) {
+				/* IE/Edge */
+				elem.msRequestFullscreen();
+			}
+		},
+		openFullScreen() {
+			let elem = this.$refs.galleria.$el;
+
+			if (elem.requestFullscreen) {
+				elem.requestFullscreen();
+			} else if (elem.mozRequestFullScreen) {
+				/* Firefox */
+				elem.mozRequestFullScreen();
+			} else if (elem.webkitRequestFullscreen) {
+				/* Chrome, Safari & Opera */
+				elem.webkitRequestFullscreen();
+			} else if (elem.msRequestFullscreen) {
+				/* IE/Edge */
+				elem.msRequestFullscreen();
+			}
+		},
+		closeFullScreen() {
+			if (document.exitFullscreen) {
+				document.exitFullscreen();
+			} else if (document.mozCancelFullScreen) {
+				document.mozCancelFullScreen();
+			} else if (document.webkitExitFullscreen) {
+				document.webkitExitFullscreen();
+			} else if (document.msExitFullscreen) {
+				document.msExitFullscreen();
+			}
+		},
+		onFullScreenChange() {
+			this.fullScreen = !this.fullScreen;
+		},
+		bindDocumentListeners() {
+			document.addEventListener("fullscreenchange", this.onFullScreenChange);
+			document.addEventListener("mozfullscreenchange", this.onFullScreenChange);
+			document.addEventListener("webkitfullscreenchange", this.onFullScreenChange);
+			document.addEventListener("msfullscreenchange", this.onFullScreenChange);
+		},
+		unbindDocumentListeners() {
+			document.removeEventListener("fullscreenchange", this.onFullScreenChange);
+			document.removeEventListener("mozfullscreenchange", this.onFullScreenChange);
+			document.removeEventListener("webkitfullscreenchange", this.onFullScreenChange);
+			document.removeEventListener("msfullscreenchange", this.onFullScreenChange);
+		},
+		isImg(ruta = "") {
+			return ruta.match(/\.(jpeg|jpg|png|gif)$/) != null;
+		},
 	},
 	computed: {
 		totalPagar() {
@@ -440,6 +615,9 @@ export default {
 				return acum;
 			}, 0);
 		},
+		fullScreenIcon() {
+			return `pi pi-window-maximize`;
+		},
 	},
 	async created() {
 		this.store = useStoreEvento();
@@ -452,6 +630,16 @@ export default {
 			},
 		};
 		await this.getCreadores();
+		this.bindDocumentListeners();
 	},
 };
 </script>
+<style>
+.metodo_pago::first-letter {
+	text-transform: uppercase;
+}
+
+.gallery-slider {
+	height: 370px;
+}
+</style>

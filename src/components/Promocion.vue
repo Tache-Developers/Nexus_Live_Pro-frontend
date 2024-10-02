@@ -2,10 +2,10 @@
 	<Panel class="creadores">
 		<Toast />
 		<template #header>
-			<div class="flex align-items-center gap-2 flex-end w-full justify-content-between">
+			<div class="flex align-items-center gap-2 flex-end w-full justify-content-between flex-wrap">
 				<h1 class="m-0">Promoción</h1>
-				<h3 class="m-0 p-0">Saldo creadores: ${{ saldoCreadores }}</h3>
-				<div class="botones flex gap-2">
+				<h3 class="m-0 p-0">Saldo creadores: ${{ saldoCreadores.toFixed(2) }}</h3>
+				<div class="botones flex gap-2 flex-wrap">
 					<span class="p-input-icon-left">
 						<i class="pi pi-search" />
 						<InputText v-model="filtersCreadores['global'].value" placeholder="Buscar.." />
@@ -72,7 +72,7 @@
 			<template #header>
 				<div class="flex flex-wrap gap-2 align-items-center justify-content-between">
 					<h1 class="m-0 text-white">Historial ordenes</h1>
-					<h3 class="m-0 p-0 text-white">Total gastado: ${{ totalGastado }}</h3>
+					<h3 class="m-0 p-0 text-white">Total gastado: ${{ totalGastado.toFixed(2) }}</h3>
 				</div>
 			</template>
 			<Column field="usuario" header="Creador" sortable style="min-width: 6rem" />

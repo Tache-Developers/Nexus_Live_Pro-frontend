@@ -936,6 +936,7 @@ export default {
 			store: null,
 			token: null,
 			activePanel: 0,
+			reclamandoBonus: false,
 			configBonus: {
 				bonus_generales: true,
 				bonus_categoria: false,
@@ -1741,45 +1742,56 @@ export default {
 		},
 		async reclamarBono(bono = null) {
 			if (bono != null) {
-				this.$toast.add({
-					severity: "info",
-					summary: "Reclamar préstamo",
-					detail: "Reclamando bono, espera un momento...",
-					life: 1600,
-				});
-				await axios
-					.put(`${this.API}/bonus/reclamar/${bono}/${this.usuario._id}`, {}, this.token)
-					.then(async (resp) => {
-						if (!resp.data.error) {
-							await this.getMisPremiosActuales();
-							await this.getUsuario();
-							await this.getConfigBonus();
-							await this.obtenerBonus();
-							await this.getBonosAgrupadosCategoria();
-							setTimeout(() => {
-								this.resaltarBonusExclusivo();
-							}, 1200);
-						}
-						this.$toast.add({
-							severity: resp.data.error ? "error" : "success",
-							summary: "Reclamar bono",
-							detail: resp.data.error ? resp.data.message : "Bono reclamado con éxito, ve a Mis premios para terminar la transacción",
-							life: 1650,
-						});
-					})
-					.catch((error) => {
-						switch (error.response.data.statusCode) {
-							case 401:
-								//Se le termino la sesión
-								this.store.clearUser();
-								this.$router.push("/login");
-								break;
-							default:
-								this.$toast.add({ severity: "error", summary: "Reclamar bono", detail: "Ocurrió un problema", life: 1600 });
-								console.log("Error: ", error);
-								break;
-						}
+				if (!this.reclamandoBonus) {
+					this.reclamandoBonus = true;
+					this.$toast.add({
+						severity: "info",
+						summary: "Reclamar bono",
+						detail: "Reclamando bono, espera un momento...",
+						life: 1600,
 					});
+					await axios
+						.put(`${this.API}/bonus/reclamar/${bono}/${this.usuario._id}`, {}, this.token)
+						.then(async (resp) => {
+							if (!resp.data.error) {
+								await this.getMisPremiosActuales();
+								await this.getUsuario();
+								await this.getConfigBonus();
+								await this.obtenerBonus();
+								await this.getBonosAgrupadosCategoria();
+								setTimeout(() => {
+									this.resaltarBonusExclusivo();
+								}, 1200);
+							}
+							this.$toast.add({
+								severity: resp.data.error ? "error" : "success",
+								summary: "Reclamar bono",
+								detail: resp.data.error ? resp.data.message : "Bono reclamado con éxito, ve a Mis premios para terminar la transacción",
+								life: 1650,
+							});
+						})
+						.catch((error) => {
+							switch (error.response.data.statusCode) {
+								case 401:
+									//Se le termino la sesión
+									this.store.clearUser();
+									this.$router.push("/login");
+									break;
+								default:
+									this.$toast.add({ severity: "error", summary: "Reclamar bono", detail: "Ocurrió un problema", life: 1600 });
+									console.log("Error: ", error);
+									break;
+							}
+						});
+					this.reclamandoBonus = false;
+				} else {
+					this.$toast.add({
+						severity: "info",
+						summary: "Reclamar bono",
+						detail: "Se está reclamando un bono, espera un momento...",
+						life: 1600,
+					});
+				}
 			}
 		},
 		async getUsuario() {
