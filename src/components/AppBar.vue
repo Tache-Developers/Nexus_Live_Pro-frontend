@@ -9,7 +9,7 @@
 
 				<template #item="{ item, props }">
 					<router-link :to="item.route" v-slot="{ href }" custom>
-						<a v-ripple :href="href" v-bind="props.action" @click="actionMenu(item.action)">
+						<a v-ripple :href="href" aria-hidden="true" v-bind="props.action" @click="actionMenu(item.action)">
 							<span :class="item.icon" />
 							<span class="ml-2">{{ item.label }}</span>
 						</a>

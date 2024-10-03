@@ -463,13 +463,20 @@ export default {
 		},
 		dataListaRegalo: {
 			mostrarLista: false,
-			monedasMaximasRegalo: 0,
+			monedasMaximasRegalo: -1,
+			misMonedas: 0
 		},
 	}),
 	methods: {
 		mostrarListaRegalo(bono = null) {
 			if (bono != null) {
-				this.dataListaRegalo.monedasMaximasRegalo = parseInt(bono.premio.match(/\d+/)) * 100;
+				/*
+				- Se usaba para traer los regalos con ese máximo valor en monedas
+				- this.dataListaRegalo.monedasMaximasRegalo = parseInt(bono.premio.match(/\d+/)) * 100;
+				- Cuando monedasMaximasRegalo es 0 se listan todos los regalos y se activan solo los que puedo comprar
+				*/
+				this.dataListaRegalo.monedasMaximasRegalo = 0;
+				this.dataListaRegalo.misMonedas = parseInt(bono.premio.match(/\d+/)) * 100;
 				this.transferencia.usuario = this.usuario;
 				this.transferencia.posPremio = bono.id_concurso;
 				this.transferencia.metodo_pago = "regalo";

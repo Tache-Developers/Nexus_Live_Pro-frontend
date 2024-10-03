@@ -27,13 +27,14 @@
 								v-for="(regalo, index) in posibles_regalos"
 								:key="index"
 								class="col-auto p-1 shadow-green-900 border-round card-regalo"
-								:class="{ seleccionado: inSeleccionados(regalo._id) }"
+								:class="{ seleccionado: inSeleccionados(regalo._id), 'no-puede-seleccionar': !puedeSeleccionar(regalo) }"
 							>
 								<div class="p-2 border-none surface-none border-round flex flex-column">
 									<div class="flex justify-content-center border-round">
 										<div class="relative mx-auto w-full h-full">
 											<img class="border-round w-full h-full" :src="regalo.imagen" alt="Regalo" style="max-width: 300px" />
 											<Checkbox
+												v-if="puedeSeleccionar(regalo)"
 												@update:modelValue="actualizarMonedas"
 												multiple
 												v-model="canjear_regalos"
@@ -69,9 +70,17 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+		/*
+		 * Cuando monedasMaximasRegalo es 0 se listan todos los regalos
+		 * Sino se listan todos los regalos que se puedan comprar con las monedas
+		 */
 		monedasMaximasRegalo: {
 			type: Number,
 			default: 100,
+		},
+		misMonedas: {
+			type: Number,
+			default: 0,
 		},
 	},
 	data: () => ({
@@ -83,7 +92,6 @@ export default {
 		},
 		store: null,
 		btnCanjear: false,
-		misMonedas: 0,
 		canjear_regalos: [],
 		posibles_regalos: [],
 		mostrarDialogRegalos: false,
@@ -94,8 +102,9 @@ export default {
 		},
 		monedasMaximasRegalo(newValue) {
 			if (newValue > 0) {
-				this.misMonedas = newValue;
-				this.obtenerRegalos();
+				this.getRegalosLimite();
+			} else {
+				this.getRegalos();
 			}
 		},
 	},
@@ -156,9 +165,44 @@ export default {
 				});
 			}
 		},
-		async obtenerRegalos() {
+		puedeSeleccionar(regalo = null) {
+			if (regalo == null) {
+				return false;
+			}
+
+			if (this.inSeleccionados(regalo._id)) {
+				return true;
+			}
+			return regalo.precio_monedas <= this.miSaldoMonedas;
+		},
+		async obtenerRegalosLimite() {
 			await axios
 				.get(`${this.API}/regalo/max-monedas/${this.monedasMaximasRegalo}`, this.header)
+				.then((resp) => {
+					this.posibles_regalos = resp.data;
+				})
+				.catch((error) => {
+					switch (error.response.data.statusCode) {
+						case 401:
+							//Se le termino la sesión
+							this.store.clearUser();
+							this.$router.push("/login");
+							break;
+						default:
+							this.$toast.add({
+								severity: "error",
+								summary: "Regalos",
+								detail: "Sucedió un error, comuníquese con soporte",
+								life: 1600,
+							});
+							console.log("Error: ", error);
+							break;
+					}
+				});
+		},
+		async getRegalos() {
+			await axios
+				.get(`${this.API}/regalo`, this.header)
 				.then((resp) => {
 					this.posibles_regalos = resp.data;
 				})
@@ -207,6 +251,11 @@ export default {
 }
 .card-regalo.seleccionado {
 	border: 2px solid #6ee7b7;
+}
+
+.card-regalo.no-puede-seleccionar {
+	box-shadow: none !important;
+	opacity: 0.3;
 }
 
 .card-regalo {
