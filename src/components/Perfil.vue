@@ -55,7 +55,7 @@
                 <h2 class="mb-0 sm:text-center xs:text-center font-gamers">Actualización {{ fechaAct }}</h2>
                 <img src="/assets/img/eventos/divisor-titulo.png" class="w-full" alt="Divisor">
 
-                <div class="flex gap-8 xs:gap-3 sm:gap-3 sm:flex-wrap md:flex-wrap md:gap-3 xs:flex-wrap xs:justify-content-center md:justify-content-center lg:justify-content-center">
+                <div class="flex gap-8 xs:gap-3 sm:gap-3 sm:flex-wrap md:flex-nowrap md:gap-3 xs:flex-wrap xs:justify-content-center md:justify-content-center lg:justify-content-center">
                     <div class="flex flex-column gap-4">
                         <div class="seguidores flex align-items-center decorador gap-2 p-2">
                             <div class="icono">

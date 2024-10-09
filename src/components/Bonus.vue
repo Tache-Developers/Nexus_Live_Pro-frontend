@@ -1820,19 +1820,25 @@ export default {
 			if (isExclusivo) {
 				if (categorias == undefined) {
 					/*
-					Es un bono Exclusivo general, por nivel
+					Es un bono Exclusivo general
 					Si no fue entregado anteriormente, lo busco en los actuales
 					Si ya fue entregado en los premios del mes actual se pone Reclamado
 					Sino fue porque se pudo haber reclamado en anteriores meses, se puede reclamar
 					*/
 					let indexPremio = this.idsMisPremios.findIndex((premio) => premio.id_concurso == id);
-					return indexPremio > -1 ? [true, "Reclamado"] : [false, "No aplica"];
+					if (indexPremio > -1) {
+						return this.idsMisPremios[indexPremio].estado == "Entregado" ? [true, "Entregado"] : [true, "Reclamado"];
+					}
+
+					//Busco si el mes ya se entrego un premio de Nivel Exclusivo
+					indexPremio = this.idsMisPremios.findIndex((premio) => premio.descripcion == "Nivel Exclusivo");
+					return indexPremio > -1 ? [true, "No aplica"] : [false, "No aplica"];
 				} else {
 					//Es un bono Exclusivo por categoría
 					//Si no fue entregado anteriormente, lo busco en los actuales
 					let indexPremio = this.idsMisPremios.findIndex((premio) => premio.id_concurso == id);
 					if (indexPremio > -1) {
-						return [true, "Reclamado"];
+						return this.idsMisPremios[indexPremio].estado == "Entregado" ? [true, "Entregado"] : [true, "Reclamado"];
 					}
 
 					//Busco si el id enviado ya fue entregado para la misma categoria, para dar un mensaje apropiado
@@ -1851,40 +1857,38 @@ export default {
 				}
 			} else {
 				if (categorias == undefined) {
-					//Es un bono Exclusivo general, por nivel
-					//Si no fue entregado anteriormente, lo busco en los actuales
+					//Es un bono general por nivel
+					//Si no fue entregado anteriormente, lo busco en los premios actuales
 					let indexPremio = this.idsMisPremios.findIndex((premio) => premio.id_concurso == id);
 					if (indexPremio > -1) {
-						return [true, "Reclamado"];
+						return this.idsMisPremios[indexPremio].estado == "Entregado" ? [true, "Entregado"] : [true, "Reclamado"];
 					}
-					//Busco si el id enviado ya fue entregado, para dar un mensaje apropiado
-					indexPremio = this.usuario_actual.premios.findIndex((premio) => premio.id_concurso == id);
-					if (indexPremio > -1) {
-						return [true, "Entregado"];
-					}
-					//Busco si un premio del mismo tipo fue Reclamado
+
+					//Busco si ya fue entregado uno del mismo tipo
+					//Solo Nivel 1, Nivel 2, etc.
 					indexPremio = this.idsMisPremios.findIndex(
 						(premio) => premio.descripcion != "Nivel Exclusivo" && !premio.descripcion.startsWith("Categoría")
 					);
-					console.log("ult", indexPremio);
 
 					return indexPremio > -1 ? [true, "No aplica"] : [false, "No aplica"];
 				} else {
+					//Es un bono por categoría
+					//Busco si el id enviado ya fue entregado para mi categoria en el mes actual, para dar un mensaje apropiado
 					let indexPremio = this.idsMisPremios.findIndex((premio) => premio.id_concurso == id);
-					//Busco si el id enviado ya fue entregado para mi categoria, para dar un mensaje apropiado
 					if (indexPremio > -1) {
-						return [true, "Reclamado"];
+						return this.idsMisPremios[indexPremio].estado == "Entregado" ? [true, "Entregado"] : [true, "Reclamado"];
 					}
-					//Si no fue entregado anteriormente, lo busco en los actuales
+					//Si no fue entregado en el mes actual, lo busco en todos mis premios filtrando por la categoría
 					indexPremio = this.usuario_actual.premios.findIndex(
-						(premio) => premio.id_concurso == id && premio.descripcion == `Categoría ${this.usuario.creator_type}`
+						(premio) => premio.id_concurso == id && premio.descripcion == `Categoría ${this.usuario_actual.creator_type}`
 					);
 					if (indexPremio > -1) {
 						return [true, "Entregado"];
 					}
-
-					//Busco si un premio del mismo tipo fue Reclamado
-					indexPremio = this.idsMisPremios.findIndex((premio) => premio.descripcion == `Categoría ${this.usuario_actual.creator_type}`);
+					//Si ya se entrego uno de mi categoría
+					indexPremio = this.usuario_actual.premios.findIndex(
+						(premio) => premio.descripcion == `Categoría ${this.usuario_actual.creator_type}`
+					);
 					return indexPremio > -1 ? [true, "No aplica"] : [false, "No aplica"];
 				}
 			}
