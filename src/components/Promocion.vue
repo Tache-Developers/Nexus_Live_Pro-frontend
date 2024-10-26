@@ -79,6 +79,7 @@
 			<Column field="orden.fecha" header="Fecha" sortable style="min-width: 11rem">
 				<template #body="props">{{ props.data.orden.fecha.slice(0, 10) }} {{ props.data.orden.fecha.slice(11, 16) }}</template>
 			</Column>
+			<Column field="orden.proveedor.nombre" header="Proveedor" sortable />
 			<Column field="orden.service" header="ID Service" sortable />
 			<Column field="orden.descripcion" header="Descripcion" class="word-wrap" sortable />
 			<Column field="orden.cantidad" header="Cantidad" />
@@ -119,6 +120,7 @@
 						</div>
 					</div>
 				</template>
+				<Column field="proveedor.nombre" header="Proveedor" sortable />
 				<Column field="service" header="Código" />
 				<Column field="name" header="Nombre" />
 				<Column field="type" header="Tipo" />
@@ -130,8 +132,13 @@
 				<Column field="refill" header="Refill" />
 				<Column field="cancel" header="Cancel" />
 				<Column header="Agencia">
-					<template #body="slotProps">
-						<Checkbox v-model="selectedServicios" :inputId="slotProps.data.service" name="serviceSelect" :value="slotProps.data" />
+					<template #body="props">
+						<Checkbox
+							v-model="selectedServicios"
+							:inputId="props.data.service"
+							name="serviceSelect"
+							:value="{ proveedor: props.data.proveedor._id, service: props.data.service }"
+						/>
 					</template>
 				</Column>
 			</DataTable>
@@ -217,6 +224,7 @@ export default {
 		btnActualizarSaldo: false,
 		servicios: [],
 		selectedServicios: [],
+		servicesActives: [],
 		btnServiciosSelect: false,
 		btnServiciosIcon: "",
 		filters: {
@@ -232,6 +240,9 @@ export default {
 		ordenesHistorial: [],
 	}),
 	methods: {
+		servicioSeleccionado(service) {
+			console.log(service);
+		},
 		async getServicios() {
 			await axios
 				.get(`${this.API}/promocion/servicesALL`, this.token)
@@ -261,7 +272,7 @@ export default {
 			await axios
 				.get(`${this.API}/promocion/servicesActive`, this.token)
 				.then((response) => {
-					this.selectedServicios = response.data;
+					this.selectedServicios = response.data.map((s) => ({ proveedor: s.proveedor._id, service: s.service }));
 				})
 				.catch((error) => {
 					switch (error.response.data.statusCode) {

@@ -24,6 +24,7 @@ import Terminos from "../views/Terminos.vue";
 import ControlReglas from "../components/ControlReglas.vue";
 import ActualizacionesReglas from "../components/ActualizacionesReglas.vue";
 import Regalos from "../components/Regalos.vue";
+import Proveedores from "../components/Proveedores.vue";
 
 const routes = [
 	{ path: "/", name: "Home", component: Home },
@@ -165,6 +166,15 @@ const routes = [
 				beforeEnter: (to, from, next) => {
 					const store = useStoreEvento();
 					return store.isAdmin() ? next() : next(from);
+				},
+			},
+			{
+				path: "/panel/proveedores",
+				name: "Proveedores",
+				component: Proveedores,
+				beforeEnter: (to, from, next) => {
+					const store = useStoreEvento();
+					return store.isAdmin() ? next() : next("/login");
 				},
 			},
 		],

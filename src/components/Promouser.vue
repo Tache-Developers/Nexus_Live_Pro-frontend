@@ -35,6 +35,7 @@
 				</Column>
 				<Column field="pagar" header="Pago" sortable />
 				<Column field="order" header="Order ID" sortable />
+				<Column field="status" header="Estado" sortable />
 			</DataTable>
 		</Panel>
 		<Dialog
@@ -251,6 +252,7 @@ export default {
 			creditos: null,
 		},
 		paquetePromocion: {
+			proveedor: null,
 			service: null,
 			descripcion: null,
 			cantidad: null,
@@ -294,7 +296,7 @@ export default {
 			this.crearRecargaBinance.creditos = this.selectRecargaBinance.creditos;
 		},
 		selectServicio(event) {
-			console.log(event);
+			this.paquetePromocion.proveedor = event.proveedor._id;
 			this.help_cantidad = `Puedes ordenar entre ${event.min} y ${event.max}`;
 			this.paquetePromocion.service = event.service;
 			this.paquetePromocion.descripcion = event.name;
@@ -365,7 +367,6 @@ export default {
 							await axios
 								.post(`${this.API}/usuario/ordenar`, this.paquetePromocion, this.token)
 								.then((response) => {
-									console.log(response);
 									if (response.data) {
 										this.$toast.add({ severity: "success", summary: "Ordenar", detail: "Orden creada con éxito", life: 1500 });
 										this.servicioSelect = null;
