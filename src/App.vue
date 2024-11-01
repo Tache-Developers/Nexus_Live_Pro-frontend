@@ -8,6 +8,10 @@
 	src: url("/assets/fonts/Planet-Gamers/Planet-Gamers.woff");
 }
 
+.primera-mayus::first-letter {
+	text-transform: uppercase;
+}
+
 .font-gamers {
 	font-family: "planet-gamers" !important;
 }

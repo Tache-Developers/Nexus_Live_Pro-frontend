@@ -8,12 +8,46 @@
 				</template>
 
 				<template #item="{ item, props }">
-					<router-link :to="item.route" v-slot="{ href }" custom>
-						<a v-ripple :href="href" aria-hidden="false" v-bind="props.action" @click="actionMenu(item.action)">
-							<span :class="item.icon" />
-							<span class="ml-2">{{ item.label }}</span>
+					<router-link :to="item.route" v-if="!item.children" v-slot="{ href }" custom>
+						<a v-ripple :href="href" v-bind="props.action" aria-hidden="false" @click="actionMenu(item.action)">
+							<span :class="item.icon" class="mr-2" />
+							<span>{{ item.label }}</span>
 						</a>
 					</router-link>
+					<div v-else>
+						<a
+							v-ripple
+							v-styleclass="{
+								selector: '@next',
+								enterClass: 'hidden',
+								enterActiveClass: 'slidedown',
+								leaveToClass: 'hidden',
+								leaveActiveClass: 'slideup',
+							}"
+							class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple"
+						>
+							<span :class="item.icon" class="mr-2" />
+							<span class="font-medium">{{ item.label }}</span>
+							<i class="pi pi-chevron-down ml-auto"></i>
+						</a>
+						<ul class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
+							<li v-for="(child, index) in item.children" :key="index">
+								<router-link :to="child.route" v-slot="{ href }" custom>
+									<a
+										v-ripple
+										class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple"
+										:href="href"
+										v-bind="props.action"
+										aria-hidden="false"
+										@click="actionMenu(item.action)"
+									>
+										<span :class="child.icon" class="mr-2" />
+										<span class="font-medium">{{ child.label }}</span>
+									</a>
+								</router-link>
+							</li>
+						</ul>
+					</div>
 				</template>
 			</Menu>
 		</Sidebar>
@@ -31,7 +65,8 @@
 			</template>
 
 			<template #end>
-				<div class="flex items-center gap-2">
+				<div class="flex flex-wrap justify-content-end align-items-center gap-2 info-perfil">
+					<Tag v-if="!store.isAdmin()" severity="info" rounded :value="`Créditos: ${creditos}`" />
 					<a style="cursor: pointer !important" @click="toggle" aria-haspopup="true" aria-controls="overlay_menu">
 						<Avatar
 							v-if="store.isAdmin() || store.getFoto().length == 0"
@@ -140,6 +175,12 @@ import dialogEditarPerfil from "./EditarPerfil.vue";
 import EventoEspecial from "./EventoEspecial.vue";
 import Insignias from "./Insignias.vue";
 export default {
+	props: {
+		creditos: {
+			type: String,
+			default: "0",
+		},
+	},
 	components: {
 		dialogMiPerfil,
 		dialogEditarPerfil,
@@ -507,7 +548,12 @@ export default {
 				{
 					label: "Promoción",
 					icon: "pi pi-thumbs-up-fill",
-					route: "/panel/promouser",
+					children: [
+						{ label: "Crear orden", icon: "pi pi-cart-plus", route: "/panel/ordenar" },
+						{ label: "Ordenes", icon: "pi pi-shopping-cart", route: "/panel/ordenes" },
+						{ label: "Servicios", icon: "pi pi-list", route: "/panel/servicios" },
+						{ label: "Agregar fondos", icon: "pi pi-money-bill", route: "/panel/agregarfondos" },
+					],
 				},
 				{
 					label: "Deseos",

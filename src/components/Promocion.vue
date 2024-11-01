@@ -100,8 +100,10 @@
 			position="top"
 			:modal="true"
 			:draggable="false"
+			maximizable
 		>
 			<DataTable
+				ref="dtServicios"
 				:value="servicios"
 				:filters="filters"
 				paginator
@@ -110,13 +112,38 @@
 				tableStyle="min-width: 100%"
 			>
 				<template #header>
-					<div class="flex items-center gap-2 flex-end w-full justify-content-end">
-						<div class="botones flex gap-2">
-							<span class="p-input-icon-left">
-								<i class="pi pi-search" />
-								<InputText v-model="filters['global'].value" placeholder="Buscar.." />
-							</span>
-							<Button icon="pi pi-trash" label="Vaciar" @click="selectedServicios = []" />
+					<div class="flex flex-wrap flex-column gap-2 align-items-center justify-content-center">
+						<div class="flex flex-wrap align-items-center gap-2 flex-end w-full justify-content-between">
+							<SelectButton v-model="proveedor" @update:modelValue="filtrarProveedores" :options="proveedores" aria-labelledby="basic" />
+
+							<div class="botones flex flex-wrap gap-2">
+								<span class="p-input-icon-left">
+									<i class="pi pi-search" />
+									<InputText v-model="filters['global'].value" placeholder="Buscar.." />
+								</span>
+								<Button icon="pi pi-trash" label="Vaciar" @click="selectedServicios = []" />
+							</div>
+						</div>
+						<div class="flex overflow-hidden flex-wrap w-full align-items-center justify-content-end gap-2">
+							<Dropdown
+								v-model="categoria"
+								:options="categorias"
+								filter
+								showClear
+								optionLabel="categoria"
+								@update:modelValue="filtrarCategorias"
+								optionValue="categoria"
+								placeholder="Selecciona una categoría para filtrar"
+								class="flex-1 w-full"
+							/>
+							<Button
+								class="w-max m-2"
+								v-tooltip.top="'Se seleccionarán todas las filas visibles'"
+								severity="info"
+								icon="pi pi-check"
+								label="Seleccionar todo"
+								@click="selectServicios"
+							/>
 						</div>
 					</div>
 				</template>
@@ -222,7 +249,12 @@ export default {
 			usuario: null,
 		},
 		btnActualizarSaldo: false,
+		proveedores: ["Todos"],
+		proveedor: "Todos",
+		categorias: [],
+		categoria: null,
 		servicios: [],
+		copia_servicios: [],
 		selectedServicios: [],
 		servicesActives: [],
 		btnServiciosSelect: false,
@@ -240,14 +272,60 @@ export default {
 		ordenesHistorial: [],
 	}),
 	methods: {
-		servicioSeleccionado(service) {
-			console.log(service);
+		selectServicios() {
+			const rowsVisible = this.$refs.dtServicios.dataToRender();
+			if (rowsVisible.length > 0) {
+				let addSelected = rowsVisible.filter((r) => {
+					return !this.selectedServicios.some((s) => s.proveedor == r.proveedor._id && s.service == r.service);
+				});
+
+				if (addSelected.length > 0) {
+					addSelected = addSelected.map((s) => ({ proveedor: s.proveedor._id, service: s.service }));
+					this.selectedServicios = this.selectedServicios.concat(addSelected);
+					this.$toast.add({
+						severity: "info",
+						summary: "Servicios seleccionados",
+						detail: `Se agregaron ${addSelected.length} servicios`,
+						life: 1600,
+					});
+				}
+			}
+		},
+		filtrarProveedores(proveedor) {
+			if (proveedor != null) {
+				this.servicios =
+					proveedor == "Todos" ? this.copia_servicios : this.copia_servicios.filter((servicio) => servicio.proveedor.nombre === proveedor);
+
+				this.categoria = null;
+				this.getCategoriasProveedor();
+			}
+		},
+		filtrarCategorias(categoria) {
+			if (categoria != null) {
+				this.servicios = this.copia_servicios.filter((servicio) => servicio.category == categoria);
+			}
+		},
+		getCategoriasProveedor() {
+			this.categorias = [];
+			this.servicios.forEach((servicio) => {
+				const existeCat = this.categorias.some((cat) => cat.categoria == servicio.category);
+				if (!existeCat) {
+					this.categorias.push({ categoria: servicio.category });
+				}
+			});
 		},
 		async getServicios() {
 			await axios
 				.get(`${this.API}/promocion/servicesALL`, this.token)
 				.then((response) => {
 					this.servicios = response.data;
+					this.copia_servicios = response.data;
+					response.data.forEach((servicio) => {
+						if (!this.proveedores.includes(servicio.proveedor.nombre)) {
+							this.proveedores.push(servicio.proveedor.nombre);
+						}
+					});
+					this.getCategoriasProveedor();
 				})
 				.catch((error) => {
 					switch (error.response.data.statusCode) {
