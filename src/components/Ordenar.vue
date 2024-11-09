@@ -13,6 +13,7 @@
 									:options="categoriasFilter"
 									emptyMessage="Sin categorías disponibles"
 									filter
+									:filterFields="['service', 'name']"
 									optionLabel="categoria"
 									optionValue="categoria"
 									placeholder="Selecciona categoría para filtrar servicios"
