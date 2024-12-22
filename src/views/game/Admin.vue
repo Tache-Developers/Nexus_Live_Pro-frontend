@@ -11,6 +11,8 @@
                         offIcon="pi pi-lock-open" class="w-9rem" aria-label="Do you confirm" />
                     <Button label="Añadir" icon="pi pi-plus" severity="success" class="mr-2"
                         @click="newAcountDialog = true" />
+                    <Button label="Regalos" icon="pi pi-gift" severity="success" class="mr-2"
+                        @click="openGiftDialog()" />
                     <Button label="Jugar" icon="pi pi-play  " severity="warning" class="mr-2" @click="jugar()" />
                     <span class="p-input-icon-left">
                         <i class="pi pi-search" />
@@ -95,15 +97,20 @@
                 <Button label="Eliminar" severity="danger" icon="pi pi-check" text @click="deleteAcountBd()" />
             </div>
         </Dialog>
+        <GiftDialog ref="giftDialog" />
     </div>
 </template>
 <script>
 import { useSessionStore } from '../../store';
 import { useToast } from "primevue/usetoast";
 import { FilterMatchMode, FilterOperator } from 'primevue/api';
+import  GiftDialog from './GiftDialog.vue'
 import axios from 'axios';
 export default {
     name: "Admingame",
+    components: {
+        GiftDialog
+    },
     data: () => ({
         API: "https://patosgame.fly.dev",
         data: null,
@@ -112,6 +119,7 @@ export default {
         toast: null,
         user: null,
         newAcountDialog: false,
+        
         idDeleteAcount: null,
         deleteAcountDialog: false,
         nameAcountDelete: '',
@@ -126,6 +134,9 @@ export default {
         letSwitch: false,
     }),
     methods: {
+        openGiftDialog(){
+            this.$refs.giftDialog.openDialog()
+        },
         convertirMilisegundos(milisegundos) {
             // Calcula los segundos, minutos, horas y días
             let segundos = Math.floor(milisegundos / 1000);

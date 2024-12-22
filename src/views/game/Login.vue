@@ -2,7 +2,7 @@
     <div class="login">
         <Toast />
         <div class="form-container">
-            <p class="title">Nexus Live Pro ADMIN</p>
+            <p class="title">SAMYFLW ADMIN</p>
             <div class="form">
                 <div class="input-group">
                     <label for="username">Usuario</label>
