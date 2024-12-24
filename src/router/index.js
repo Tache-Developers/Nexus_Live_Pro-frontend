@@ -28,6 +28,7 @@ import Proveedores from "../components/Proveedores.vue";
 import Ordenar from "../components/Ordenar.vue";
 import AgregarFondos from "../components/AgregarFondos.vue";
 import Servicios from "../components/Servicios.vue";
+import TablaSeleccionado from "../components/TablaSeleccionado.vue";
 
 const routes = [
 	{ path: "/", name: "Home", component: Home },
@@ -197,7 +198,8 @@ const routes = [
 					const store = useStoreEvento();
 					return store.isActive() ? next() : next("/login");
 				},
-			},{
+			},
+			{
 				path: "/panel/servicios",
 				name: "Servicios",
 				component: Servicios,
@@ -206,7 +208,15 @@ const routes = [
 					return store.isActive() ? next() : next("/login");
 				},
 			},
-			
+			{
+				path: "/panel/tablas",
+				name: "TablasSeleccionados",
+				component: TablaSeleccionado,
+				beforeEnter: (to, from, next) => {
+					const store = useStoreEvento();
+					return store.isAdmin() ? next() : next("/login");
+				},
+			},
 		],
 	},
 	{ path: "/duckracer", name: "Game", component: Game },

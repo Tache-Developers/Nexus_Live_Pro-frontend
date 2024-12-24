@@ -375,6 +375,8 @@ export default {
     height: 3px;
     background-image: url('/assets/img/eventos/linea.png');
     width: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .p-tabview-nav>.p-tabview-header:not(.p-highlight)>.p-tabview-nav-link {
@@ -499,6 +501,10 @@ export default {
         background-size: contain !important;
         min-width: 100% !important;
         padding: 10px 10px 48px 10px !important;
+    }
+
+    header {
+        padding: 10px 0 10px 20px !important;
     }
 }
 

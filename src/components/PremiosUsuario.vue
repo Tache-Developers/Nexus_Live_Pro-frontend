@@ -2,7 +2,7 @@
 	<Panel class="premios">
 		<Toast />
 		<template #header>
-			<div class="flex flex-wrap items-center gap-2 flex-end w-full justify-content-between">
+			<div class="flex items-center flex-wrap gap-2 flex-end w-full justify-content-between">
 				<h1 class="m-0">Mis premios</h1>
 				<Message severity="info" class="m-0" :closable="false">
 					<div class="flex flex-wrap align-items-center gap-2">
@@ -14,6 +14,9 @@
 							con el botón:
 						</p>
 						<Button class="btn_regalo" severity="danger" icon="pi pi-gift" />
+						<p class="m-0">
+							<strong>UBICADO EN CADA PREMIO</strong>
+						</p>
 					</div>
 				</Message>
 			</div>
@@ -22,10 +25,12 @@
 		<DataTable :value="premios" :sortOrder="-1" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20, 50]" tableStyle="min-width: 100%">
 			<Column field="tipo_premio" header="Tipo" />
 			<Column header="Premio" field="premio" sortable>
-				<template #body="slotProps">
-					<div class="w-full" v-if="slotProps.data.estado != 'Sin reclamar'">
-						<p class="m-0" v-if="slotProps.data.tipo_premio !== 'Objeto'">{{ slotProps.data.premio }}</p>
-						<Image v-else :src="slotProps.data.premio" alt="Imagen del premio" width="250" preview />
+				<template #body="props">
+					<div class="w-full" v-if="props.data.estado != 'Sin reclamar'">
+						<p class="m-0" v-if="['Bonus', 'Efectivo', 'SaldoApi'].includes(props.data.tipo_premio) || !isImg(props.data.premio)">
+							{{ props.data.premio }}
+						</p>
+						<Image v-else :src="props.data.premio" alt="Imagen del premio" width="120" heigth="100" imageClass="border-round" preview />
 					</div>
 				</template>
 			</Column>
@@ -64,36 +69,37 @@
 				</template>
 			</Column>
 			<Column header="Acciones">
-				<template #body="slotProps">
+				<template #body="props">
 					<div class="flex gap-2 flex-wrap">
 						<Button
 							class="btn_regalo"
 							severity="danger"
 							v-tooltip.top="'Canjear por regalos'"
-							v-if="puedeReclamar(slotProps.data.estado, slotProps.data.fecha_obtenido) && slotProps.data.tipo_premio == 'Bonus'"
+							v-if="puedeReclamar(props.data, 'canjear_regalo') && props.data.estado == 'Sin reclamar'"
 							icon="pi pi-gift"
-							@click="mostrarListaRegalo(slotProps.data)"
+							@click="mostrarListaRegalo(props.data)"
 						/>
 						<Button
-							v-if="puedeReclamar(slotProps.data.estado, slotProps.data.fecha_obtenido)"
+							v-if="puedeReclamar(props.data) && props.data.estado == 'Sin reclamar'"
 							icon="pi pi-send"
 							@click="
 								() => {
 									Reclamar(
-										slotProps.data.tipo_premio,
-										slotProps.data.id_concurso,
-										slotProps.data.estado,
-										slotProps.data.premio,
-										slotProps.data.descripcion
+										props.data.tipo_premio,
+										props.data.id_concurso,
+										props.data.estado,
+										props.data.premio,
+										props.data.descripcion,
+										props.data.fecha_obtenido
 									);
 								}
 							"
 						/>
-						<div v-if="slotProps.data.estado == 'Entregado' && slotProps.data.tipo_premio != 'SaldoApi'">
+						<div v-if="props.data.estado == 'Entregado' && props.data.tipo_premio != 'SaldoApi'">
 							<Image
 								v-tooltip.top="'Comprobante de entrega'"
-								v-if="isImg(slotProps.data.transferencia.comprobante)"
-								:src="slotProps.data.transferencia.comprobante"
+								v-if="isImg(props.data.transferencia.comprobante)"
+								:src="props.data.transferencia.comprobante"
 								alt="Imagen del premio"
 								width="50"
 								preview
@@ -104,7 +110,7 @@
 								class="cursor-pointer"
 								@click="fullScreenVideo"
 								v-tooltip.top="'Click para ver el vídeo de la compra'"
-								:src="slotProps.data.transferencia.comprobante"
+								:src="props.data.transferencia.comprobante"
 								muted
 							/>
 						</div>
@@ -121,7 +127,7 @@
 			:modal="true"
 			:draggable="false"
 		>
-			<div class="flex flex-wrap gap-2 mb-2" v-if="dialogo === 'Efectivo' || dialogo == 'Bonus'">
+			<div class="flex flex-wrap gap-2 mb-2" v-if="!['Objeto', 'SaldoApi'].includes(dialogo) && !isImg(cajaSorpresa.premio)">
 				<RadioButton v-model="cuentas" inputId="1" name="nequi" value="nequi" />
 				<label class="ml-2">Nequi</label>
 				<RadioButton v-model="cuentas" inputId="2" name="paypal" value="paypal" />
@@ -133,7 +139,7 @@
 			</div>
 
 			<form ref="formEnviar" class="formEnviar">
-				<div v-if="dialogo === 'Efectivo' || dialogo == 'Bonus'">
+				<div v-if="!['Objeto', 'SaldoApi'].includes(dialogo) && !isImg(cajaSorpresa.premio)">
 					<div class="flex gap-2 sm:flex-column md:flex-row" v-if="cuentas === 'banco'">
 						<div class="flex flex-column gap-2 w-6 sm:w-full md:w-6">
 							<label class="font-semibold">Tipo cuenta</label>
@@ -218,7 +224,7 @@
 			</form>
 			<template #footer>
 				<Button label="Cancelar" @click="(cuenta = false), (cuentas = 'nequi')" text severity="danger" />
-				<Button label="Reclamar" @click="Enviar"></Button>
+				<Button label="Reclamar" @click="Enviar" />
 			</template>
 		</Dialog>
 		<CajaSorpresa
@@ -464,7 +470,7 @@ export default {
 		dataListaRegalo: {
 			mostrarLista: false,
 			monedasMaximasRegalo: -1,
-			misMonedas: 0
+			misMonedas: 0,
 		},
 	}),
 	methods: {
@@ -479,8 +485,10 @@ export default {
 				this.dataListaRegalo.misMonedas = parseInt(bono.premio.match(/\d+/)) * 100;
 				this.transferencia.usuario = this.usuario;
 				this.transferencia.posPremio = bono.id_concurso;
+				this.transferencia.fecha_obtenido = bono.fecha_obtenido;
 				this.transferencia.metodo_pago = "regalo";
 				this.dataListaRegalo.mostrarLista = true;
+				console.log(this.transferencia);
 			}
 		},
 		fullScreenVideo(event) {
@@ -500,7 +508,7 @@ export default {
 			}
 		},
 		isImg(ruta = "") {
-			return ruta.match(/\.(jpeg|jpg|png|gif)$/) != null;
+			return ruta.match(/\.(jpeg|jpg|png|gif|webp|bmp|apng|svg|avif|heic|heif)$/) != null;
 		},
 		async getPremios() {
 			await axios
@@ -521,8 +529,7 @@ export default {
 					}
 				});
 		},
-
-		async Reclamar(tipo, posicion, estado, premio = null, descripcion = null) {
+		async Reclamar(tipo, posicion, estado, premio = null, descripcion = null, fecha_obtenido = "") {
 			if (estado == "Sin reclamar") {
 				this.transferencia.usuario = this.usuario;
 				// sin reclamar
@@ -530,17 +537,18 @@ export default {
 					this.mensaje = "Medio de envio";
 					this.dialogo = "Envio";
 					this.cuentas = "Envio";
-				} else if (tipo == "Efectivo" || tipo == "Bonus") {
+				} else {
 					this.mensaje = "Medio de Pago";
 					this.dialogo = tipo;
 				}
 				this.transferencia.posPremio = posicion;
+				this.transferencia.fecha_obtenido = fecha_obtenido;
 				//Para usar en el emit
 				this.paqueteReclamando.tipo_premio = tipo;
 				this.paqueteReclamando.id_concurso = posicion;
 				this.cajaSorpresa.tipo_premio = tipo;
-				this.cajaSorpresa.premio = tipo == "Objeto" ? premio : `${premio} ${descripcion}`;
-				this.cajaSorpresa.descripcion = tipo == "Objeto" ? descripcion : "";
+				this.cajaSorpresa.premio = this.isImg(premio) ? premio : `${premio} ${descripcion}`;
+				this.cajaSorpresa.descripcion = this.isImg(premio) ? descripcion : "";
 				this.cajaSorpresa.mostrar = true;
 			}
 		},
@@ -606,13 +614,47 @@ export default {
 						Authorization: `Bearer ${this.store.getToken()}`,
 					},
 				})
-				.then(() => {})
-				.finally(() => {
-					this.cajaSorpresa.mostrar = false;
-					this.cuenta = false;
-					this.$toast.add({ severity: "success", summary: "Reclamo exitoso", life: 1600 });
-					this.transferencia = {};
-					this.getPremios();
+				.then((resp) => {
+					if (!resp.data.error) {
+						this.cajaSorpresa.mostrar = false;
+						this.cuenta = false;
+						this.transferencia = {};
+						this.getPremios();
+					}
+
+					this.$toast.add({
+						severity: resp.data.error ? "error" : "success",
+						summary: "Reclamar regalo",
+						detail: resp.data.message,
+						life: 1600,
+					});
+				})
+				.catch((error) => {
+					switch (error.response.data.statusCode) {
+						case 400:
+							//Bad Request
+							this.$toast.add({
+								severity: "error",
+								summary: "Reclamar regalo",
+								detail: "Formato de los datos incorrecto",
+								life: 1600,
+							});
+							break;
+						case 401:
+							//Se le termino la sesión
+							this.store.clearUser();
+							this.$router.push("/login");
+							break;
+						default:
+							this.$toast.add({
+								severity: "error",
+								summary: "Reclamar regalo",
+								detail: "Sucedió un error, comuníquese con soporte",
+								life: 1600,
+							});
+							console.log("Error: ", error);
+							break;
+					}
 				});
 		},
 		ponerEstado(estado) {
@@ -666,16 +708,25 @@ export default {
 					});
 			}
 		},
-		puedeReclamar(estado = "Sin reclamar", fecha_obtenido = null) {
-			if (estado && fecha_obtenido) {
-				const fecha_premio = new Date(fecha_obtenido);
-				const fecha_actual = new Date();
-				if ((estado == "En proceso" && fecha_actual.getTime() < fecha_premio.getTime) || estado == "Sin reclamar") {
+		puedeReclamar(premio = null, cat = null) {
+			let premios_canje = ["Bonus", "Efectivo"];
+
+			if (cat == "canjear_regalo") {
+				//Solo puedes canjear el premio por regalos cuándo es Bonus o un bonus de una tabla seleccionado que no sea regalo
+				if (premios_canje.includes(premio.tipo_premio)) {
 					return true;
 				} else {
-					return false;
+					//Debe ser un premio de tabla seleccionado que no es un regalo
+					premios_canje = ["Bonus", "Efectivo", "SaldoApi", "Objeto"];
+					if (!premios_canje.includes(premio.tipo_premio) && !this.isImg(premio.premio)) {
+						return true;
+					}
 				}
+			} else {
+				//Es para enviar
+				return premio.tipo_premio != "SaldoApi";
 			}
+			return false;
 		},
 		async canjearPorRegalos(regalos = []) {
 			this.dataListaRegalo.mostrarLista = false;

@@ -57,8 +57,8 @@
 					<Button icon="pi pi-bars" text size="large" @click="visibleSidebar = true" />
 					<a href="/" style="text-decoration: none">
 						<span class="text-2xl font-bold logo">
-							<span>Nexus</span>
-							Live Pro
+							<span>Samy</span>
+							flw
 						</span>
 					</a>
 				</div>
@@ -412,6 +412,7 @@ export default {
 							icon: "pi pi-money-bill",
 							route: "/panel/bonus",
 						},
+						{ label: "Tabla seleccionados", icon: "pi pi-table", route: "/panel/tablas" },
 						{
 							label: "Premios Aleatorios",
 							icon: "pi pi-wallet",
@@ -649,6 +650,14 @@ export default {
 	background-color: #1f2937 !important;
 	border-radius: 0 !important;
 	border: 0 !important;
+	/* padding: 0 200px; */
+}
+.info-perfil > span.p-tag {
+	width: auto !important;
+	text-align: center;
+}
+.opciones {
+	padding: 0 50px !important;
 }
 
 .p-sidebar-content > div,
@@ -678,5 +687,20 @@ export default {
 
 .logo > span {
 	color: #84dc16;
+}
+@media (max-width: 1012px) {
+	.opciones {
+		padding: 0 30px !important;
+	}
+}
+@media (max-width: 972px) {
+	.opciones {
+		padding: 0 20px !important;
+	}
+}
+@media (max-width: 909px) {
+	.opciones {
+		padding: 0 0 !important;
+	}
 }
 </style>

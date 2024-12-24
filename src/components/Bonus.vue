@@ -9,7 +9,78 @@
 						<img src="/assets/img/perfil/iconos/bonus.png" height="170px" alt="Bonus" />
 					</div>
 				</template>
-				<TabView :scrollable="true" class="tabBonusUsuario">
+				<TabView v-if="Object.hasOwn(miTablaSeleccionado.tabla, '_id')" :scrollable="true" class="tabBonusUsuario">
+					<TabPanel :headerClass="'tab-primero'">
+						<template #header>
+							<div class="flex align-items-center gap-2">
+								<span class="font-bold white-space-nowrap">{{ miTablaSeleccionado.tabla.nombre }}</span>
+							</div>
+						</template>
+						<DataTable class="bonus-usuario" :value="miTablaSeleccionado.tabla.bonus" tableStyle="min-width: 100%">
+							<Column field="nivel" header="Nivel 👑" class="font-gamers" />
+							<Column
+								v-for="(col, colIndex) in getHeadersColumn()"
+								:key="colIndex"
+								:field="col.field"
+								:header="col.header"
+								class="font-gamers"
+							>
+								<template #body="props">
+									<Image
+										v-if="props.data.regalo && col.field == 'referencia'"
+										:src="props.data.referencia"
+										alt="Referencia"
+										width="120"
+										height="100"
+										imageClass="border-round"
+										preview
+									/>
+									<span v-else-if="props.data.regalo && col.field == 'bonificacion'" v-html="props.data.bonificacion" />
+									<!-- No es por diamantes -->
+									<Knob
+										v-else-if="!['diamantes', 'diamantes_partida', 'bonificacion', 'ganancia'].includes(col.field)"
+										:valueColor="validarCompletoColor(estadisticas[col.field], props.data[col.field])"
+										v-model="estadisticas[col.field]"
+										:valueTemplate="props.data[col.field].toString()"
+										readonly
+										:max="validarKnob(estadisticas[col.field], props.data[col.field])"
+										:size="70"
+									/>
+									<!-- Es por diamantes -->
+									<div class="flex flex-column" v-else-if="['diamantes', 'diamantes_partida'].includes(col.field)">
+										{{ props.data[col.field] == 0 ? "" : props.data[col.field].toLocaleString() }}
+										<div class="container flex flex-column gap-2">
+											<div class="barra-progreso-horas text-center">
+												<div class="diamante" v-if="calcularProgresoDiamantes(props.data[col.field], estadisticas[col.field])[0] == 100" />
+												<div
+													:class="'progreso static ' + calcularProgresoDiamantes(props.data[col.field], estadisticas[col.field])[1]"
+													:style="{ width: calcularProgresoDiamantes(props.data[col.field], estadisticas[col.field])[0] + '%' }"
+												/>
+												<p class="m-0 w-full">{{ calcularProgresoDiamantes(props.data[col.field], estadisticas[col.field])[0] }}%</p>
+											</div>
+										</div>
+									</div>
+									<!-- No es un criterio -->
+									<span v-else>{{ props.data[col.field] }}</span>
+								</template>
+							</Column>
+							<Column header="Estado" class="font-gamers">
+								<template #body="props">
+									<div
+										v-if="miTablaSeleccionado.bonus_cumplidos.some((b) => b.nivel === props.data.nivel)"
+										class="aplica cursor-pointer color-verde"
+										v-tooltip.top="'Clic para reclamar el bono'"
+										@click="reclamarBonoSeleccionado(props.data.nivel)"
+									>
+										Reclamar
+									</div>
+									<div class="aplica color-rojo" v-else>{{ getMessageBono(props.data.nivel) }}</div>
+								</template>
+							</Column>
+						</DataTable>
+					</TabPanel>
+				</TabView>
+				<TabView v-else :scrollable="true" class="tabBonusUsuario">
 					<TabPanel v-if="configBonus.bonus_generales == true" :headerClass="'tab-primero'">
 						<template #header>
 							<div class="flex align-items-center gap-2">
@@ -98,8 +169,6 @@
 						</template>
 						<DataTable
 							class="bonus-usuario"
-							sortField="exclusivo"
-							:sortOrder="-1"
 							:value="bonusByCategoria('Rookie')"
 							tableStyle="min-width: 100%"
 						>
@@ -183,8 +252,6 @@
 						</template>
 						<DataTable
 							class="bonus-usuario"
-							sortField="exclusivo"
-							:sortOrder="-1"
 							:value="bonusByCategoria('Veteran')"
 							tableStyle="min-width: 100%"
 						>
@@ -268,8 +335,6 @@
 						</template>
 						<DataTable
 							class="bonus-usuario"
-							sortField="exclusivo"
-							:sortOrder="-1"
 							:value="bonusByCategoria('Pro')"
 							tableStyle="min-width: 100%"
 						>
@@ -353,8 +418,6 @@
 						</template>
 						<DataTable
 							class="bonus-usuario"
-							sortField="exclusivo"
-							:sortOrder="-1"
 							:value="bonusByCategoria('Pro+')"
 							tableStyle="min-width: 100%"
 						>
@@ -986,12 +1049,22 @@ export default {
 				dias: null,
 				diamantes: null,
 				horas: null,
+				diamantes_partida: null,
+				batallas: null,
 			},
 			modalBonus: false,
 			modalBonusCategoria: false,
 			modalVerCumplen: false,
 			idsMisPremios: [],
 			categorias: ["Rookie", "Pro", "Pro+", "Veteran"],
+			miTablaSeleccionado: { tabla: {}, bonus_cumplidos: [] },
+			criterios: [
+				{ label: "Horas", value: "horas" },
+				{ label: "Diamantes", value: "diamantes" },
+				{ label: "Días", value: "dias" },
+				{ label: "Batallas", value: "batallas" },
+				{ label: "Diamantes por partida", value: "diamantes_partida" },
+			],
 		};
 	},
 	methods: {
@@ -1019,6 +1092,17 @@ export default {
 				return indexCat != -1 ? this.bonusCategoria[indexCat].bonus : [];
 			}
 			return [];
+		},
+		getMessageBono(nivel = null) {
+			if (nivel != null) {
+				const bono = this.idsMisPremios.find(
+					(p) => p.id_concurso == this.miTablaSeleccionado.tabla._id && p.descripcion == `Nivel ${nivel}`
+				);
+				if (bono != null) {
+					return bono.estado == "Entregado" ? "Entregado" : "Reclamado";
+				}
+			}
+			return "No aplica";
 		},
 		async verQuienCumple(idBonus = null) {
 			if (idBonus != null) {
@@ -1119,6 +1203,41 @@ export default {
 			}
 
 			return valid;
+		},
+		getHeadersColumn() {
+			let headers = [];
+			headers = this.miTablaSeleccionado.tabla.criterios;
+			headers = headers.map((h) => {
+				return {
+					header: this.criterios.find((c) => c.value == h).label,
+					field: h,
+				};
+			});
+			const isRegalo = this.miTablaSeleccionado.tabla.bonus.some((b) => b.regalo == true);
+			const notRegalo = this.miTablaSeleccionado.tabla.bonus.some((b) => b.regalo == false);
+			if (isRegalo) {
+				headers.push(
+					{
+						header: "Obsequio",
+						field: "bonificacion",
+					},
+					{ header: "Referencia", field: "referencia" }
+				);
+			} 
+			if (notRegalo || this.miTablaSeleccionado.tabla.bonus.length == 0) {
+				headers.push(
+					{
+						header: "Ganancia",
+						field: "ganancia",
+					},
+					{
+						header: "Bonificación",
+						field: "bonificacion",
+					}
+				);
+			}
+
+			return headers;
 		},
 		async crearBonus() {
 			if (this.paqueteBonus.exclusivo) {
@@ -1647,6 +1766,26 @@ export default {
 					});
 			}
 		},
+		async getMiTablaSeleccionado() {
+			await axios
+				.get(`${this.API}/tabla-seleccionado/usuario/${this.usuario._id}`, this.token)
+				.then((resp) => {
+					this.miTablaSeleccionado = resp.data;
+				})
+				.catch((error) => {
+					switch (error.response.data.statusCode) {
+						case 401:
+							//Se le termino la sesión
+							this.store.clearUser();
+							this.$router.push("/login");
+							break;
+						default:
+							this.$toast.add({ severity: "error", summary: "Obtener mi tabla seleccionado", detail: "Ocurrió un problema", life: 1600 });
+							console.log("Error: ", error);
+							break;
+					}
+				});
+		},
 		comfirmDelete(id, nivel = null) {
 			//Si nivel es null es porque es un bono por categorias
 			if (nivel != null) {
@@ -1746,7 +1885,7 @@ export default {
 					this.reclamandoBonus = true;
 					this.$toast.add({
 						severity: "info",
-						summary: "Reclamar bono",
+						summary: "Reclamar bonus",
 						detail: "Reclamando bono, espera un momento...",
 						life: 1600,
 					});
@@ -1787,7 +1926,62 @@ export default {
 				} else {
 					this.$toast.add({
 						severity: "info",
-						summary: "Reclamar bono",
+						summary: "Reclamar préstamo",
+						detail: "Se está reclamando un bono, espera un momento...",
+						life: 1600,
+					});
+				}
+			}
+		},
+		async reclamarBonoSeleccionado(nivel = null) {
+			if (nivel != null) {
+				if (!this.reclamandoBonus) {
+					this.reclamandoBonus = true;
+					this.$toast.add({
+						severity: "info",
+						summary: "Reclamar bonus",
+						detail: "Reclamando bono, espera un momento...",
+						life: 1600,
+					});
+					await axios
+						.put(
+							`${this.API}/tabla-seleccionado/${this.miTablaSeleccionado.tabla._id}/reclamar-bono/${parseInt(nivel)}/usuario/${
+								this.usuario._id
+							}`,
+							{},
+							this.token
+						)
+						.then(async (resp) => {
+							if (!resp.data.error) {
+								await this.getUsuario();
+								await this.getMisPremiosActuales();
+								await this.getMiTablaSeleccionado();
+							}
+							this.$toast.add({
+								severity: resp.data.error ? "error" : "success",
+								summary: "Reclamar bono",
+								detail: resp.data.error ? resp.data.message : "Bono reclamado con éxito, ve a Mis premios para terminar la transacción",
+								life: 1650,
+							});
+						})
+						.catch((error) => {
+							switch (error.response.data.statusCode) {
+								case 401:
+									//Se le termino la sesión
+									this.store.clearUser();
+									this.$router.push("/login");
+									break;
+								default:
+									this.$toast.add({ severity: "error", summary: "Reclamar bono", detail: "Ocurrió un problema", life: 1600 });
+									console.log("Error: ", error);
+									break;
+							}
+						});
+					this.reclamandoBonus = false;
+				} else {
+					this.$toast.add({
+						severity: "info",
+						summary: "Reclamar préstamo",
 						detail: "Se está reclamando un bono, espera un momento...",
 						life: 1600,
 					});
@@ -1815,6 +2009,8 @@ export default {
 				});
 		},
 		yaReclamaron(id, isExclusivo = false, categorias) {
+			const now = new Date();
+			const anio_mes = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, "0")}`;
 			//Se debe hacer toda la validación con usuario_actual y idsMisPremios para estar actualizados
 			//Falta arreglar los bonos por categoría no exclusivos
 			if (isExclusivo) {
@@ -1878,16 +2074,10 @@ export default {
 					if (indexPremio > -1) {
 						return this.idsMisPremios[indexPremio].estado == "Entregado" ? [true, "Entregado"] : [true, "Reclamado"];
 					}
-					//Si no fue entregado en el mes actual, lo busco en todos mis premios filtrando por la categoría
-					indexPremio = this.usuario_actual.premios.findIndex(
-						(premio) => premio.id_concurso == id && premio.descripcion == `Categoría ${this.usuario_actual.creator_type}`
-					);
-					if (indexPremio > -1) {
-						return [true, "Entregado"];
-					}
-					//Si ya se entrego uno de mi categoría
-					indexPremio = this.usuario_actual.premios.findIndex(
-						(premio) => premio.descripcion == `Categoría ${this.usuario_actual.creator_type}`
+
+					//Si ya se entrego uno de mi categoría para el mes actual
+					indexPremio = this.idsMisPremios.findIndex(
+						(premio) => premio.descripcion == `Categoría ${this.usuario_actual.creator_type}` && premio.fecha_obtenido.startsWith(anio_mes)
 					);
 					return indexPremio > -1 ? [true, "No aplica"] : [false, "No aplica"];
 				}
@@ -1914,7 +2104,7 @@ export default {
 				let eventoAsignado = false;
 				filas.forEach((fila) => {
 					const primerTd = fila.querySelector("td");
-					if (["Sí", "Exclusivo"].includes(primerTd.innerText)) {
+					if (["Exclusivo"].includes(primerTd.innerText)) {
 						const divAntes = document.createElement("div");
 						divAntes.classList.add("resaltar-exclusivo");
 						const divDespues = document.createElement("div");
@@ -1934,7 +2124,6 @@ export default {
 			let scrollTop = event.target.scrollTop;
 			let tabla = event.target.querySelector("table");
 			let heightExclusivos = this.getHeightExclusivos(tabla) - 10;
-			console.log(scrollTop, heightExclusivos);
 
 			const body = tabla.querySelector("tbody");
 			const filas = body.querySelectorAll("tr");
@@ -1987,14 +2176,18 @@ export default {
 			this.estadisticas.horas = this.usuario.last_live_duration_mes_actual.includes("h")
 				? parseInt(this.usuario.last_live_duration_mes_actual.split("h")[0])
 				: 0;
+
 			this.estadisticas.diamantes = parseInt(this.usuario.diamantes_mes_actual);
-			//axios.get(`${this.API}/bonus/definirBonus`);
+			this.estadisticas.diamantes_partida = parseInt(isNaN(this.usuario.diamantes_partida) ? "0" : this.usuario.diamantes_partida);
+			this.estadisticas.batallas = parseInt(isNaN(this.usuario.batallas) ? "0" : this.usuario.batallas);
+			await this.getMiTablaSeleccionado();
 		} else {
 			await this.getTotalPagar();
 			await this.getBonusCategorias();
 			await this.getMezclaCategorias();
 			await this.getBonusMezclados();
 		}
+
 		await this.getConfigBonus();
 		await this.getBonosAgrupadosCategoria();
 		await this.obtenerBonus();
