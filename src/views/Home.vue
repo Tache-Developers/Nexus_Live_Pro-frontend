@@ -26,7 +26,7 @@
 			<div class="resenas">
 				<img src="/assets/img/home/resenas-bottom.png" class="resenas-top" alt="Reseñas" />
 				<div class="contenido mt-8 pt-8 flex flex-column align-items-center">
-					<h2 class="text-center text-4xl">RESEÑAS</h2>
+					<h2 class="text-center text-4xl mt-8">RESEÑAS</h2>
 					<div class="resenas-usuario">
 						<VueCarousel
 							v-bind="settings"

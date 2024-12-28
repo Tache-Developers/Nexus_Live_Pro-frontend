@@ -26,6 +26,13 @@
 					<Button icon="pi pi-plus" label="Bonus" severity="warning" @click="mostrarModalCrearBonus(tabla._id)" />
 					<Button icon="pi pi-plus" label="Creadores" @click="mostrarModalCreadores(tabla)" />
 					<Button
+						icon="pi pi-eye"
+						v-tooltip.top="'Ver creadores seleccionados'"
+						label="Ver creadores"
+						severity="info"
+						@click="verCreadores(tabla._id)"
+					/>
+					<Button
 						v-tooltip.top="'Eliminar tabla'"
 						icon="pi pi-trash"
 						label="Eliminar"
@@ -113,25 +120,18 @@
 			</template>
 		</Dialog>
 		<!-- Dialog para seleccionar creadores -->
-		<Dialog
-			v-model:visible="modalAddCreadores"
-			:header="`Selección de creadores: ${paquete_creador_tabla.creadores.length}`"
-			:style="{ width: '75rem' }"
-			:breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
-			position="center"
-			:modal="true"
-			:draggable="false"
-			:maximizable="true"
-		>
-			<SeleccionarCreador
-				:creadores_seleccionados="creadores_seleccionados"
-				@creadoresSeleccionados="(c) => (paquete_creador_tabla.creadores = c)"
-			/>
-			<template #footer>
-				<Button label="Cancelar" @click="modalAddCreadores = false" autofocus text severity="danger" />
-				<Button label="Guardar" :disabled="btnCrear" @click="agregarCreadoresTabla" />
-			</template>
-		</Dialog>
+		<DialogSeleccionarCreador
+			v-bind="dialogCreadores"
+			@cerrarDialog="
+				() => {
+					dialogCreadores.creadores_seleccionados = [];
+					dialogCreadores.mostrar_modal = false;
+					paquete_creador_tabla.tabla = null;
+					paquete_creador_tabla.creadores = [];
+				}
+			"
+			@update:seleccionados="agregarCreadoresTabla"
+		/>
 		<!-- Dialogo para crear bonus -->
 		<Dialog
 			v-model:visible="modalCrearBonus"
@@ -214,6 +214,30 @@
 				<Button label="Cerrar" @click="modalVerCumplen = false" text severity="danger" />
 			</template>
 		</Dialog>
+		<Dialog
+			v-model:visible="modalVerCreadores"
+			header="Creadores seleccionados"
+			:style="{ width: '35rem' }"
+			:breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
+			position="top"
+			:modal="true"
+			:draggable="false"
+		>
+			<DataTable :value="creadoresSeleccionados" tableStyle="min-width: 100%" sortField="usuario" :sortOrder="1">
+				<template #header>
+					<div class="flex flex-wrap align-items-center justify-content-center gap-2">
+						<span class="text-xl text-900 font-bold">
+							{{ creadoresSeleccionados.length }}
+							{{ creadoresSeleccionados.length == 1 ? "creador seleccionado" : "creadores seleccionados" }}
+						</span>
+					</div>
+				</template>
+				<Column field="usuario" header="Creador" />
+			</DataTable>
+			<template #footer>
+				<Button label="Cerrar" @click="modalVerCreadores = false" text severity="danger" />
+			</template>
+		</Dialog>
 		<ConfirmDialog />
 	</Panel>
 </template>
@@ -231,7 +255,11 @@ export default {
 		},
 		store: null,
 		tabla: { nombre: null, criterios: [] },
-		creadores_seleccionados: [],
+		dialogCreadores: {
+			creadores_seleccionados: [],
+			mostrar_modal: false,
+			guardando_datos: false,
+		},
 		paquete_creador_tabla: { tabla: null, creadores: [] },
 		paquete_bonus_tabla: {
 			nombre_tabla: null,
@@ -267,11 +295,13 @@ export default {
 		criteriosTablaBonus: [],
 		cumplenBonus: [],
 		modalCrearTabla: false,
-		modalAddCreadores: false,
 		modalCrearBonus: false,
 		modalVerCumplen: false,
 		idEditarBonus: null,
 		btnCrear: false,
+		modalVerCreadores: false,
+		creadoresSeleccionados: [],
+		creadores: [],
 	}),
 	methods: {
 		async getTablas() {
@@ -372,16 +402,17 @@ export default {
 			}
 			this.btnCrear = false;
 		},
-		async agregarCreadoresTabla() {
-			this.btnCrear = true;
+		async agregarCreadoresTabla(creadores = []) {
+			this.dialogCreadores.guardando_datos = true;
 			if (this.paquete_creador_tabla.tabla != null) {
+				this.paquete_creador_tabla.creadores = creadores;
 				const paquete = { ...this.paquete_creador_tabla };
 				delete paquete.tabla;
 				await axios
 					.put(`${this.API}/tabla-seleccionado/${this.paquete_creador_tabla.tabla}/agregar-creadores`, paquete, this.token)
 					.then((resp) => {
 						if (!resp.data.error) {
-							this.modalAddCreadores = false;
+							this.dialogCreadores.mostrar_modal = false;
 							this.getTablas();
 						}
 						if (resp.data.timer != undefined && !resp.data.timer) {
@@ -427,7 +458,7 @@ export default {
 						}
 					});
 			}
-			this.btnCrear = false;
+			this.dialogCreadores.guardando_datos = false;
 		},
 		async crearBonusTabla() {
 			this.btnCrear = true;
@@ -640,6 +671,7 @@ export default {
 					.then((resp) => {
 						if (!resp.data.error) {
 							this.getTablas();
+							this.activeTabla = this.activeTabla > 0 ? this.activeTabla - 1 : this.activeTabla;
 						}
 						this.$toast.add({
 							severity: !resp.data.error ? "success" : "error",
@@ -736,6 +768,40 @@ export default {
 				});
 			}
 		},
+		async getCreadores() {
+			await axios
+				.get(`${this.API}/usuario`, this.token)
+				.then((resp) => {
+					this.creadores = resp.data;
+				})
+				.catch((error) => {
+					switch (error.response.data.statusCode) {
+						case 400:
+							//Bad Request
+							this.$toast.add({
+								severity: "error",
+								summary: "Obtener creadores",
+								detail: "Formato de los datos incorrecto",
+								life: 1600,
+							});
+							break;
+						case 401:
+							//Se le termino la sesión
+							this.store.clearUser();
+							this.$router.push("/login");
+							break;
+						default:
+							this.$toast.add({
+								severity: "error",
+								summary: "Obtener creadores",
+								detail: "Sucedió un error, comuníquese con soporte",
+								life: 1600,
+							});
+							console.log("Error: ", error);
+							break;
+					}
+				});
+		},
 		getHeaderColumn(criterio = null) {
 			return this.criterios.find((c) => c.value == criterio);
 		},
@@ -781,11 +847,11 @@ export default {
 		},
 		mostrarModalCreadores(tabla = null) {
 			if (tabla != null) {
-				this.creadores_seleccionados = tabla.creadores; //Se usa en el componente de seleccionar creadores
+				this.dialogCreadores.creadores_seleccionados = tabla.creadores; //Se usa en el componente de seleccionar creadores
 				//Paquete para guardar creadores
 				this.paquete_creador_tabla.tabla = tabla._id;
 				this.paquete_creador_tabla.creadores = tabla.creadores;
-				this.modalAddCreadores = true;
+				this.dialogCreadores.mostrar_modal = true;
 			}
 		},
 		mostrarModalCrearBonus(id_tabla = null, nivel_bonus = null) {
@@ -869,6 +935,17 @@ export default {
 				referencia: null,
 			};
 		},
+		verCreadores(tabla = null) {
+			if (tabla != null) {
+				const t = this.tablas.find((ta) => ta._id == tabla);
+				if (t != undefined) {
+					this.creadoresSeleccionados = this.creadores.filter((c) => {
+						return t.creadores.includes(c._id);
+					});
+					this.modalVerCreadores = true;
+				}
+			}
+		},
 	},
 	async created() {
 		this.store = useStoreEvento();
@@ -878,6 +955,7 @@ export default {
 		}
 		this.token.headers.Authorization = `Bearer ${this.store.getToken()}`;
 		await this.getTablas();
+		await this.getCreadores();
 	},
 };
 </script>

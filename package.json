@@ -10,7 +10,9 @@
     },
     "dependencies": {
         "@chenfengyuan/vue-countdown": "^2.1.2",
+        "@codemirror/theme-one-dark": "^6.1.2",
         "axios": "^1.6.5",
+        "codemirror": "^6.0.1",
         "markdown-it": "^14.1.0",
         "phaser": "^3.70.0",
         "pinia": "^2.1.7",
@@ -19,6 +21,7 @@
         "primevue": "^3.46.0",
         "socket.io-client": "^4.7.4",
         "vue": "^3.4.14",
+        "vue-codemirror": "^6.1.1",
         "vue-router": "^4.2.5",
         "vue3-carousel": "^0.3.3"
     },

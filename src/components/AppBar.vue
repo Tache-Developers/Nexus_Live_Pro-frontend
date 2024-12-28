@@ -57,8 +57,8 @@
 					<Button icon="pi pi-bars" text size="large" @click="visibleSidebar = true" />
 					<a href="/" style="text-decoration: none">
 						<span class="text-2xl font-bold logo">
-							<span>Samy</span>
-							flw
+							<span>Nexus</span>
+							Live Pro
 						</span>
 					</a>
 				</div>

@@ -3,6 +3,7 @@ import "./style.css";
 import "primeflex/primeflex.css";
 import "primeicons/primeicons.css";
 import "primevue/resources/themes/lara-dark-green/theme.css";
+import "vue3-carousel/dist/carousel.css";
 
 import App from "./App.vue";
 import PrimeVue from "primevue/config";
@@ -33,7 +34,7 @@ import Breadcrumb from "primevue/breadcrumb";
 import Calendar from "primevue/calendar";
 import Card from "primevue/card";
 import CascadeSelect from "primevue/cascadeselect";
-import Carousel from "primevue/carousel";
+import CarouselPrime from "primevue/carousel";
 import Checkbox from "primevue/checkbox";
 import Chip from "primevue/chip";
 import Chips from "primevue/chips";
@@ -119,9 +120,16 @@ import TreeTable from "primevue/treetable";
 import TriStateCheckbox from "primevue/tristatecheckbox";
 import VirtualScroller from "primevue/virtualscroller";
 import ListaRegalos from "./components/ListaRegalos.vue";
-import SeleccionarCreador from "./components/SeleccionarCreador.vue";
+import DialogSeleccionarCreador from "./components/DialogSeleccionarCreador.vue";
 
+//Carousel vue3-carousel
+import { Carousel, Slide, Pagination, Navigation } from "vue3-carousel";
 const app = createApp(App);
+
+app.component("VueCarousel", Carousel);
+app.component("VueSlide", Slide);
+app.component("VuePagination", Pagination);
+app.component("VueNavigation", Navigation);
 
 app.use(createPinia());
 app.use(router);
@@ -169,7 +177,7 @@ app.component("Phone", Phone);
 app.component("Insignias", Insignias);
 app.component("CajaSorpresa", CajaSorpresa);
 app.component("ListaRegalos", ListaRegalos);
-app.component("SeleccionarCreador", SeleccionarCreador);
+app.component("DialogSeleccionarCreador", DialogSeleccionarCreador);
 app.use(ConfirmationService);
 app.use(ToastService);
 app.use(DialogService);
@@ -192,7 +200,7 @@ app.component("Breadcrumb", Breadcrumb);
 app.component("Button", Button);
 app.component("Calendar", Calendar);
 app.component("Card", Card);
-app.component("Carousel", Carousel);
+app.component("Carousel", CarouselPrime);
 app.component("CascadeSelect", CascadeSelect);
 app.component("Checkbox", Checkbox);
 app.component("Chip", Chip);
