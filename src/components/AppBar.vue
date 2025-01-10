@@ -66,6 +66,7 @@
 
 			<template #end>
 				<div class="flex flex-wrap justify-content-end align-items-center gap-2 info-perfil">
+					<CalendarioUsuario v-if="!store.isAdmin()" />
 					<Tag v-if="!store.isAdmin()" severity="info" rounded :value="`Créditos: ${creditos}`" />
 					<a style="cursor: pointer !important" @click="toggle" aria-haspopup="true" aria-controls="overlay_menu">
 						<Avatar
@@ -174,6 +175,7 @@ import dialogMiPerfil from "./MiPerfil.vue";
 import dialogEditarPerfil from "./EditarPerfil.vue";
 import EventoEspecial from "./EventoEspecial.vue";
 import Insignias from "./Insignias.vue";
+import CalendarioUsuario from "./CalendarioUsuario.vue";
 export default {
 	props: {
 		creditos: {
@@ -186,6 +188,7 @@ export default {
 		dialogEditarPerfil,
 		Insignias,
 		EventoEspecial,
+		CalendarioUsuario,
 	},
 	data: () => ({
 		API: import.meta.env.VITE_APP_API,
@@ -481,6 +484,7 @@ export default {
 					label: "Administración",
 					items: [
 						{ label: "Proveedores", icon: "pi pi-sitemap", route: "/panel/proveedores" },
+						{ label: "Reuniones", icon: "pi pi-calendar", route: "/panel/reuniones" },
 						{
 							label: "Insignias",
 							icon: "pi pi-star",

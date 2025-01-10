@@ -189,30 +189,27 @@ export default {
 			return this.creadores.filter((creador) => creador.diamantes_mes_anterior >= min && creador.diamantes_mes_anterior <= max);
 		},
 		selectCreadores(accion = null) {
-			const rowsVisible = this.$refs.dtCreadores.items;
-			if (rowsVisible != null && Array.isArray(rowsVisible)) {
-				let mod = 0;
-				rowsVisible.forEach((row) => {
-					if (accion === "agregar") {
-						if (!this.isSeleccionado(row._id)) {
-							this.creadoresSelect.push(row._id);
-							mod++;
-						}
-					} else if (accion === "quitar") {
-						if (this.isSeleccionado(row._id)) {
-							const index = this.creadoresSelect.indexOf(row._id);
-							this.creadoresSelect.splice(index, 1);
-							mod++;
-						}
+			let mod = 0;
+			this.creadores_copia.forEach((row) => {
+				if (accion === "agregar") {
+					if (!this.isSeleccionado(row._id)) {
+						this.creadoresSelect.push(row._id);
+						mod++;
 					}
-				});
-				this.$toast.add({
-					severity: "info",
-					summary: `${accion == "agregar" ? "Agregar" : "Quitar"} creadores`,
-					detail: `Se ${accion === "agregar" ? "agregaron" : "quitaron"} ${mod} creadores`,
-					life: 1600,
-				});
-			}
+				} else if (accion === "quitar") {
+					if (this.isSeleccionado(row._id)) {
+						const index = this.creadoresSelect.indexOf(row._id);
+						this.creadoresSelect.splice(index, 1);
+						mod++;
+					}
+				}
+			});
+			this.$toast.add({
+				severity: "info",
+				summary: `${accion == "agregar" ? "Agregar" : "Quitar"} creadores`,
+				detail: `Se ${accion === "agregar" ? "agregaron" : "quitaron"} ${mod} creadores`,
+				life: 1600,
+			});
 		},
 		confirmarCambios() {
 			if (this.nombreCreadoresEditor != null) {

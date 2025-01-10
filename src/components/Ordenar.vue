@@ -165,15 +165,16 @@ export default {
 				.get(`${this.API}/promocion/servicesActive`, this.token)
 				.then((response) => {
 					this.serviciosActivos = response.data;
+					this.servicios = response.data;
 					this.serviciosActivos.forEach((service) => {
 						const existCat = this.categoriasFilter.some((cat) => cat.categoria == service.category);
 						if (!existCat) {
 							this.categoriasFilter.push({ categoria: service.category });
 						}
 					});
-					if (this.categoriasFilter.length > 0) {
+					/* if (this.categoriasFilter.length > 0) {
 						this.categoriaSelect = this.categoriasFilter[0].categoria;
-					}
+					} */
 				})
 				.catch((error) => {
 					switch (error.response.data.statusCode) {

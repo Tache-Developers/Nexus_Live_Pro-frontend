@@ -3,6 +3,7 @@
 		<Toast />
 		<div class="usuario" v-if="!admin">
 			<PerfilUsuario />
+			<ReporteReunionesUsuario />
 			<Panel class="Bonus">
 				<template #header>
 					<div class="flex items-center gap-2 flex-end w-full justify-content-center">
@@ -67,7 +68,17 @@
 							<Column header="Estado" class="font-gamers">
 								<template #body="props">
 									<div
-										v-if="miTablaSeleccionado.bonus_cumplidos.some((b) => b.nivel === props.data.nivel)"
+										class="aplica color-rojo"
+										v-if="
+											miTablaSeleccionado.bonus_cumplidos.some((b) => b.nivel === props.data.nivel) &&
+											reunionesConfig.activo &&
+											miCalendario.reuniones_asistencia.length < reunionesConfig.min_reuniones
+										"
+									>
+										Faltan reuniones
+									</div>
+									<div
+										v-else-if="miTablaSeleccionado.bonus_cumplidos.some((b) => b.nivel === props.data.nivel)"
 										class="aplica cursor-pointer color-verde"
 										v-tooltip.top="'Clic para reclamar el bono'"
 										@click="reclamarBonoSeleccionado(props.data.nivel)"
@@ -144,6 +155,19 @@
 										{{ yaReclamaron(slotProps.data._id, slotProps.data.exclusivo, slotProps.data.categorias)[1] }}
 									</div>
 									<div
+										class="aplica color-rojo"
+										v-tooltip.top="'Debes cumplir las reuniones mínimas para reclamar el bono'"
+										v-else-if="
+											estadisticas.dias >= slotProps.data.dias &&
+											estadisticas.horas >= slotProps.data.horas &&
+											estadisticas.diamantes >= slotProps.data.meta &&
+											reunionesConfig.activo &&
+											miCalendario.reuniones_asistencia.length < reunionesConfig.min_reuniones
+										"
+									>
+										Faltan reuniones
+									</div>
+									<div
 										class="aplica cursor-pointer color-verde"
 										v-tooltip.top="'Clic para reclamar el bono'"
 										@click="reclamarBono(slotProps.data._id)"
@@ -167,11 +191,7 @@
 								<span class="font-bold white-space-nowrap">Rookie</span>
 							</div>
 						</template>
-						<DataTable
-							class="bonus-usuario"
-							:value="bonusByCategoria('Rookie')"
-							tableStyle="min-width: 100%"
-						>
+						<DataTable class="bonus-usuario" :value="bonusByCategoria('Rookie')" tableStyle="min-width: 100%">
 							<Column field="exclusivo" header="Exclusivo" class="font-gamers">
 								<template #body="props">
 									{{ props.data.exclusivo ? "Sí" : "No" }}
@@ -225,6 +245,19 @@
 										v-if="yaReclamaron(slotProps.data._id, slotProps.data.exclusivo, slotProps.data.categorias)[0]"
 									>
 										{{ yaReclamaron(slotProps.data._id, slotProps.data.exclusivo, slotProps.data.categorias)[1] }}
+									</div>
+									<div
+										class="aplica color-rojo"
+										v-tooltip.top="'Debes cumplir las reuniones mínimas para reclamar el bono'"
+										v-else-if="
+											estadisticas.dias >= slotProps.data.dias &&
+											estadisticas.horas >= slotProps.data.horas &&
+											estadisticas.diamantes >= slotProps.data.meta &&
+											reunionesConfig.activo &&
+											miCalendario.reuniones_asistencia.length < reunionesConfig.min_reuniones
+										"
+									>
+										Faltan reuniones
 									</div>
 									<div
 										class="aplica cursor-pointer color-verde"
@@ -250,11 +283,7 @@
 								<span class="font-bold white-space-nowrap">Veteran</span>
 							</div>
 						</template>
-						<DataTable
-							class="bonus-usuario"
-							:value="bonusByCategoria('Veteran')"
-							tableStyle="min-width: 100%"
-						>
+						<DataTable class="bonus-usuario" :value="bonusByCategoria('Veteran')" tableStyle="min-width: 100%">
 							<Column field="exclusivo" header="Exclusivo" class="font-gamers">
 								<template #body="props">
 									{{ props.data.exclusivo ? "Sí" : "No" }}
@@ -308,6 +337,19 @@
 										v-if="yaReclamaron(slotProps.data._id, slotProps.data.exclusivo, slotProps.data.categorias)[0]"
 									>
 										{{ yaReclamaron(slotProps.data._id, slotProps.data.exclusivo, slotProps.data.categorias)[1] }}
+									</div>
+									<div
+										class="aplica color-rojo"
+										v-tooltip.top="'Debes cumplir las reuniones mínimas para reclamar el bono'"
+										v-else-if="
+											estadisticas.dias >= slotProps.data.dias &&
+											estadisticas.horas >= slotProps.data.horas &&
+											estadisticas.diamantes >= slotProps.data.meta &&
+											reunionesConfig.activo &&
+											miCalendario.reuniones_asistencia.length < reunionesConfig.min_reuniones
+										"
+									>
+										Faltan reuniones
 									</div>
 									<div
 										class="aplica cursor-pointer color-verde"
@@ -333,11 +375,7 @@
 								<span class="font-bold white-space-nowrap">Pro</span>
 							</div>
 						</template>
-						<DataTable
-							class="bonus-usuario"
-							:value="bonusByCategoria('Pro')"
-							tableStyle="min-width: 100%"
-						>
+						<DataTable class="bonus-usuario" :value="bonusByCategoria('Pro')" tableStyle="min-width: 100%">
 							<Column field="exclusivo" header="Exclusivo" class="font-gamers">
 								<template #body="props">
 									{{ props.data.exclusivo ? "Sí" : "No" }}
@@ -391,6 +429,19 @@
 										v-if="yaReclamaron(slotProps.data._id, slotProps.data.exclusivo, slotProps.data.categorias)[0]"
 									>
 										{{ yaReclamaron(slotProps.data._id, slotProps.data.exclusivo, slotProps.data.categorias)[1] }}
+									</div>
+									<div
+										class="aplica color-rojo"
+										v-tooltip.top="'Debes cumplir las reuniones mínimas para reclamar el bono'"
+										v-else-if="
+											estadisticas.dias >= slotProps.data.dias &&
+											estadisticas.horas >= slotProps.data.horas &&
+											estadisticas.diamantes >= slotProps.data.meta &&
+											reunionesConfig.activo &&
+											miCalendario.reuniones_asistencia.length < reunionesConfig.min_reuniones
+										"
+									>
+										Faltan reuniones
 									</div>
 									<div
 										class="aplica cursor-pointer color-verde"
@@ -416,11 +467,7 @@
 								<span class="font-bold white-space-nowrap">Pro+</span>
 							</div>
 						</template>
-						<DataTable
-							class="bonus-usuario"
-							:value="bonusByCategoria('Pro+')"
-							tableStyle="min-width: 100%"
-						>
+						<DataTable class="bonus-usuario" :value="bonusByCategoria('Pro+')" tableStyle="min-width: 100%">
 							<Column field="exclusivo" header="Exclusivo" class="font-gamers">
 								<template #body="props">
 									{{ props.data.exclusivo ? "Sí" : "No" }}
@@ -474,6 +521,19 @@
 										v-if="yaReclamaron(slotProps.data._id, slotProps.data.exclusivo, slotProps.data.categorias)[0]"
 									>
 										{{ yaReclamaron(slotProps.data._id, slotProps.data.exclusivo, slotProps.data.categorias)[1] }}
+									</div>
+									<div
+										class="aplica color-rojo"
+										v-tooltip.top="'Debes cumplir las reuniones mínimas para reclamar el bono'"
+										v-else-if="
+											estadisticas.dias >= slotProps.data.dias &&
+											estadisticas.horas >= slotProps.data.horas &&
+											estadisticas.diamantes >= slotProps.data.meta &&
+											reunionesConfig.activo &&
+											miCalendario.reuniones_asistencia.length < reunionesConfig.min_reuniones
+										"
+									>
+										Faltan reuniones
 									</div>
 									<div
 										class="aplica cursor-pointer color-verde"
@@ -987,9 +1047,11 @@
 import axios from "axios";
 import { useStoreEvento } from "../store";
 import PerfilUsuario from "./Perfil.vue";
+import ReporteReunionesUsuario from "./ReporteReunionesUsuario.vue";
 export default {
 	components: {
 		PerfilUsuario,
+		ReporteReunionesUsuario,
 	},
 	data() {
 		return {
@@ -1065,6 +1127,11 @@ export default {
 				{ label: "Batallas", value: "batallas" },
 				{ label: "Diamantes por partida", value: "diamantes_partida" },
 			],
+			miCalendario: { reuniones: [], reuniones_asistencia: [], reuniones_bonus_actual: [] },
+			reunionesConfig: {
+				activo: false,
+				min_reuniones: 0,
+			},
 		};
 	},
 	methods: {
@@ -1223,7 +1290,7 @@ export default {
 					},
 					{ header: "Referencia", field: "referencia" }
 				);
-			} 
+			}
 			if (notRegalo || this.miTablaSeleccionado.tabla.bonus.length == 0) {
 				headers.push(
 					{
@@ -2156,6 +2223,51 @@ export default {
 			});
 			return heightExclusivos;
 		},
+		async getConfigReuniones() {
+			await axios.get(`${this.API}/reunion/config/actual`, this.token).then((resp) => {
+				if (resp.data != null && resp.data != "") {
+					this.reunionesConfig.min_reuniones = resp.data.min_reuniones;
+					this.reunionesConfig.activo = resp.data.activo;
+				}
+			});
+		},
+		async getMiCalendario() {
+			const d = new Date();
+			await axios
+				.get(`${this.API}/reunion/usuario/${this.store.getId()}`, this.token)
+				.then((resp) => {
+					if (!resp.data.error) {
+						this.miCalendario = resp.data;
+					}
+				})
+				.catch((error) => {
+					switch (error.response.data.statusCode) {
+						case 400:
+							//Bad Request
+							this.$toast.add({
+								severity: "error",
+								summary: "Obtener mi calendario",
+								detail: "Formato de los datos incorrecto",
+								life: 1600,
+							});
+							break;
+						case 401:
+							//Se le termino la sesión
+							this.store.clearUser();
+							this.$router.push("/login");
+							break;
+						default:
+							this.$toast.add({
+								severity: "error",
+								summary: "Obtener mi calendario",
+								detail: "Sucedió un error, comuníquese con soporte",
+								life: 1600,
+							});
+							console.log("Error: ", error);
+							break;
+					}
+				});
+		},
 	},
 	async created() {
 		this.store = useStoreEvento();
@@ -2172,6 +2284,8 @@ export default {
 			this.usuario = this.store.getUsuario();
 			await this.getMisPremiosActuales();
 			await this.getUsuario();
+			await this.getConfigReuniones();
+			await this.getMiCalendario();
 			this.estadisticas.dias = parseInt(this.usuario.dias_validos_mes_actual);
 			this.estadisticas.horas = this.usuario.last_live_duration_mes_actual.includes("h")
 				? parseInt(this.usuario.last_live_duration_mes_actual.split("h")[0])

@@ -121,6 +121,8 @@ import TriStateCheckbox from "primevue/tristatecheckbox";
 import VirtualScroller from "primevue/virtualscroller";
 import ListaRegalos from "./components/ListaRegalos.vue";
 import DialogSeleccionarCreador from "./components/DialogSeleccionarCreador.vue";
+import VCalendar from "v-calendar";
+import "v-calendar/style.css";
 
 //Carousel vue3-carousel
 import { Carousel, Slide, Pagination, Navigation } from "vue3-carousel";
@@ -166,6 +168,10 @@ app.use(PrimeVue, {
 		dateFormat: "yy-mm-dd",
 		weak: "Semana",
 	},
+});
+
+app.use(VCalendar, {
+	color: "green",
 });
 
 app.component("TopCreador", TopCreador);

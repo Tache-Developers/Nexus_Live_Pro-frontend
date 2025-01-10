@@ -32,3 +32,23 @@ html {
 p {
     color: white;
 }
+
+*:not(body, html)::-webkit-scrollbar {
+  width: 8px;
+}
+
+*:not(body, html)::-webkit-scrollbar-track {
+  background: #555;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+*:not(body, html)::-webkit-scrollbar-thumb {
+  background: #5e951c;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+*:not(body, html)::-webkit-scrollbar-thumb:hover {
+  background: #84dc09;
+}

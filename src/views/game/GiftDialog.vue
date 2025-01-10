@@ -6,16 +6,28 @@
            <div class="flex flex-column gap-4">
             <div class="flex flex-column gap-2">
                 <div class="flex gap-4">
-                    <InputText name="name" type="text" placeholder="Nombre" v-model="giftCreateBody.name" />
-                    <InputText name="id" type="number" placeholder="ID" v-model="giftCreateBody.id" />
+                    <InputText name="name" type="text" placeholder="Nombre" v-model="giftBody.name" />
+                    <InputText name="id" type="number" placeholder="ID" v-model="giftBody.id" />
                 </div>
                 <div class="flex gap-4">
-                    <InputText name="cost" type="number" placeholder="Costo" v-model="giftCreateBody.cost" />
-                    <InputText name="points" type="number" placeholder="Puntos" v-model="giftCreateBody.points" />
+                    <InputText name="cost" type="number" placeholder="Costo" v-model="giftBody.cost" />
+                    <InputText name="points" type="number" placeholder="Puntos" v-model="giftBody.points" />
                 </div>
-                <InputText name="image" type="text" placeholder="Imagen" v-model="giftCreateBody.image"/>
-                <Image v-show="giftCreateBody.image":src="giftCreateBody.image" alt="Image" width="250" preview />
-                <Button label="Añadir" @click="createGift()" />
+                <InputText name="image" type="text" placeholder="Imagen" v-model="giftBody.image"/>
+                <Image v-show="giftBody.image":src="giftBody.image" alt="Image" width="250" preview />
+                <Button v-if="buttonSelect == 'create'" label="Añadir" @click="createGift()" />
+                <Button v-if="buttonSelect == 'update'" label="Actualizar" @click="updateGift()" />
+                <Button v-if="buttonSelect == 'update'" severity="danger" label="Cancelar" @click="() => {
+                    buttonSelect = 'create'
+                    giftBody = {
+                        name: '',
+                        id: null,
+                        cost: null,
+                        points: null,
+                        image: null
+                    }
+                }" />
+
             </div>
             <DataTable paginator :rows="10"  :rowsPerPageOptions="[10, 20, 50]" :value="giftList" dataKey="_id"
                 filterDisplay="row" tableStyle="min-width: 40rem"  stripedRows>
@@ -33,9 +45,12 @@
                     </template>
                 </Column>
                 <Column header="Acción" sortable>
-                    <template #body="slotProps">
-                        <Button icon="pi pi-trash" severity="danger" @click="deleteGift(slotProps.data._id)" />
-                    </template>
+                    <template #body="slotProps" >
+                        <div class="flex gap-2">
+                            <Button icon="pi pi-pencil" severity="info" @click="preUpdateGift(slotProps.data)" />
+                            <Button icon="pi pi-trash" severity="danger" @click="deleteGift(slotProps.data._id)" />
+                        </div>
+                        </template>
                 </Column>
             </DataTable>
            </div>
@@ -51,10 +66,12 @@ export default {
     data() {
         return {
             API: "https://patosgame.fly.dev",
+            buttonSelect : 'create',
             toast: null,
             store: null,
             visibleDialog: false,
-            giftCreateBody: {
+            giftIdUpdate: null,
+            giftBody: {
                 name: '',
                 id: null,
                 cost: null,
@@ -67,6 +84,17 @@ export default {
     methods: {
         openDialog() {
             this.visibleDialog = true
+        },
+        preUpdateGift(data) {
+            this.giftIdUpdate = data._id;
+            this.giftBody = {
+                name: data.name,
+                id: data.id,
+                cost: data.cost,
+                points: data.points,
+                image: data.image
+            }
+            this.buttonSelect = 'update'
         },
         async getGiftList() {
             await axios.get(this.API + '/gift', this.token).then(res => {
@@ -84,12 +112,12 @@ export default {
             })
         },
         async createGift() {
-            this.giftCreateBody.id = parseInt(this.giftCreateBody.id);
-            this.giftCreateBody.cost = parseInt(this.giftCreateBody.cost);
-            this.giftCreateBody.points = parseInt(this.giftCreateBody.points);
-            await axios.post(this.API + '/gift/create', this.giftCreateBody, this.token).then(res => {
+            this.giftBody.id = parseInt(this.giftBody.id);
+            this.giftBody.cost = parseInt(this.giftBody.cost);
+            this.giftBody.points = parseInt(this.giftBody.points);
+            await axios.post(this.API + '/gift/create', this.giftBody, this.token).then(res => {
                 this.toast.add({ severity: "success", summary: "Gift creado", life: 3000 });
-                this.giftCreateBody = {
+                this.giftBody = {
                     name: '',
                     id: null,
                     cost: null,
@@ -97,6 +125,25 @@ export default {
                     image: null
                 }
                 this.getGiftList()
+            }).catch(err => {
+                this.toast.add({ severity: "error", summary: "Error creando gift", life: 3000 });
+            })
+        },
+        async updateGift(){
+            this.giftBody.id = parseInt(this.giftBody.id);
+            this.giftBody.cost = parseInt(this.giftBody.cost);
+            this.giftBody.points = parseInt(this.giftBody.points);
+            await axios.post(this.API + '/gift/update/' + this.giftIdUpdate, this.giftBody, this.token).then(res => {
+                this.toast.add({ severity: "success", summary: "Gift Actualizado", life: 3000 });
+                this.giftBody = {
+                    name: '',
+                    id: null,
+                    cost: null,
+                    points: null,
+                    image: null
+                }
+                this.buttonSelect = 'create';
+                this.getGiftList();
             }).catch(err => {
                 this.toast.add({ severity: "error", summary: "Error creando gift", life: 3000 });
             })
