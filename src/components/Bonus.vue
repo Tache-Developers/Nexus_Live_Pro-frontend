@@ -587,7 +587,7 @@
 					</div>
 				</div>
 			</template>
-			<TabView :scrollable="true" class="tabBonus" v-model:activeIndex="activePanel">
+			<TabView :scrollable="true" class="tabBonus" v-model:activeIndex="activePanel" @tab-change="actualizarPagar" ref="tabViewBonusAdmin">
 				<TabPanel v-if="configBonus.bonus_generales == true" :headerClass="'tab-primero'">
 					<template #header>
 						<div class="flex align-items-center gap-2">
@@ -1060,7 +1060,7 @@ export default {
 			usuario_actual: null,
 			store: null,
 			token: null,
-			activePanel: 0,
+			activePanel: -1,
 			reclamandoBonus: false,
 			configBonus: {
 				bonus_generales: true,
@@ -1069,6 +1069,7 @@ export default {
 				msgCat: "Activar",
 			},
 			totalPagar: 0,
+			infoTotalesBonus: { bonus_todos: 0, bonus_rookie: 0, bonus_veteran: 0, bonus_pro: 0, bonus_proplus: 0 },
 			multiplicador: 1,
 			btnMultiplicador: false,
 			modalMultiplicador: false,
@@ -1135,6 +1136,32 @@ export default {
 		};
 	},
 	methods: {
+		actualizarPagar(tab = null) {
+			let sel = null;
+			if (tab != null) {
+				sel = tab.originalEvent.target.innerText.toLowerCase();
+			} else {
+				const tab = this.$refs.tabViewBonusAdmin;
+				if (tab != undefined) {
+					const primero = tab.findFirstHeaderAction();
+					if (primero != undefined) {
+						sel = primero.innerText.toLowerCase();
+					}
+				}
+			}
+			if (sel == "todos") {
+				this.totalPagar = Object.values(this.infoTotalesBonus).reduce((suma, bono) => suma + bono, 0);
+			} else if (sel == "mezclar") {
+				this.totalPagar = 0;
+				this.paqueteMezclar.categorias.forEach((cat) => {
+					this.totalPagar += cat == "Pro+" ? this.infoTotalesBonus.bonus_proplus : this.infoTotalesBonus[`bonus_${cat.toLowerCase()}`];
+				});
+			} else if (sel == "pro+") {
+				this.totalPagar = this.infoTotalesBonus.bonus_proplus;
+			} else {
+				this.totalPagar = this.infoTotalesBonus[`bonus_${sel}`];
+			}
+		},
 		editarBonusDialog(data, tipo = null) {
 			if (tipo == "Bonus") {
 				this.idEditarBonus = data._id;
@@ -1710,7 +1737,7 @@ export default {
 		},
 		async getTotalPagar() {
 			await axios.get(`${this.API}/usuario/bonus/total`).then((resp) => {
-				this.totalPagar = resp.data;
+				this.infoTotalesBonus = resp.data;
 			});
 		},
 		async cambiarConfigGenerales() {
@@ -1718,10 +1745,11 @@ export default {
 			if (this.configBonus.bonus_generales) {
 				await axios
 					.put(`${this.API}/bonus/desactivar-bonus-generales`, {}, this.token)
-					.then((resp) => {
+					.then(async (resp) => {
 						if (resp.data.cambio) {
-							this.getTotalPagar();
-							this.getConfigBonus();
+							await this.getTotalPagar();
+							await this.getConfigBonus();
+							this.actualizarPagar();
 						}
 						this.$toast.add({
 							severity: resp.data.cambio ? "success" : "error",
@@ -1746,10 +1774,11 @@ export default {
 			} else {
 				await axios
 					.put(`${this.API}/bonus/activar-bonus-generales`, {}, this.token)
-					.then((resp) => {
+					.then(async(resp) => {
 						if (resp.data.cambio) {
-							this.getTotalPagar();
-							this.getConfigBonus();
+							await this.getTotalPagar();
+							await this.getConfigBonus();
+							this.actualizarPagar();
 						}
 						this.$toast.add({
 							severity: resp.data.cambio ? "success" : "error",
@@ -1778,10 +1807,11 @@ export default {
 			if (this.configBonus.bonus_categoria) {
 				await axios
 					.put(`${this.API}/bonus/desactivar-bonus-categorias`, {}, this.token)
-					.then((resp) => {
+					.then(async(resp) => {
 						if (resp.data.cambio) {
-							this.getTotalPagar();
-							this.getConfigBonus();
+							await this.getTotalPagar();
+							await this.getConfigBonus();
+							this.actualizarPagar();
 						}
 						this.$toast.add({
 							severity: resp.data.cambio ? "success" : "error",
@@ -1806,10 +1836,11 @@ export default {
 			} else {
 				await axios
 					.put(`${this.API}/bonus/activar-bonus-categorias`, {}, this.token)
-					.then((resp) => {
+					.then(async(resp) => {
 						if (resp.data.cambio) {
-							this.getTotalPagar();
-							this.getConfigBonus();
+							await this.getTotalPagar();
+							await this.getConfigBonus();
+							this.actualizarPagar();
 						}
 						this.$toast.add({
 							severity: resp.data.cambio ? "success" : "error",
@@ -2167,11 +2198,13 @@ export default {
 			const tablas = document.querySelectorAll("table");
 			tablas.forEach((tabla) => {
 				const body = tabla.querySelector("tbody");
+				if (!body.classList.contains("relative")) {
+					body.classList.add("relative");
+				}
 				const filas = body.querySelectorAll("tr");
-				let eventoAsignado = false;
 				filas.forEach((fila) => {
 					const primerTd = fila.querySelector("td");
-					if (["Exclusivo"].includes(primerTd.innerText)) {
+					if (["Exclusivo","Sí"].includes(primerTd.innerText)) {
 						const divAntes = document.createElement("div");
 						divAntes.classList.add("resaltar-exclusivo");
 						const divDespues = document.createElement("div");
@@ -2179,36 +2212,8 @@ export default {
 						body.insertBefore(divAntes, fila);
 						body.insertBefore(divDespues, fila.nextSibling);
 						fila.classList.add("resaltado");
-						if (!eventoAsignado) {
-							tabla.parentElement.addEventListener("scroll", this.scrolling);
-							eventoAsignado = true;
-						}
 					}
 				});
-			});
-		},
-		scrolling(event) {
-			let scrollTop = event.target.scrollTop;
-			let tabla = event.target.querySelector("table");
-			let heightExclusivos = this.getHeightExclusivos(tabla) - 10;
-
-			const body = tabla.querySelector("tbody");
-			const filas = body.querySelectorAll("tr");
-			filas.forEach((fila) => {
-				const primerTd = fila.querySelector("td");
-				if (["Sí", "Exclusivo"].includes(primerTd.innerText)) {
-					let anterior = fila.previousElementSibling;
-					let siguiente = fila.nextElementSibling;
-					if (scrollTop > heightExclusivos) {
-						anterior.classList.add("hidden");
-						siguiente.classList.add("hidden");
-					} else {
-						if (anterior.classList.contains("hidden") && siguiente.classList.contains("hidden")) {
-							anterior.classList.remove("hidden");
-							siguiente.classList.remove("hidden");
-						}
-					}
-				}
 			});
 		},
 		getHeightExclusivos(tabla) {
@@ -2305,6 +2310,8 @@ export default {
 		await this.getConfigBonus();
 		await this.getBonosAgrupadosCategoria();
 		await this.obtenerBonus();
+		this.activePanel=0;
+		this.actualizarPagar();
 		await this.getMultiplicador();
 		setTimeout(() => {
 			this.resaltarBonusExclusivo();
@@ -2321,6 +2328,7 @@ export default {
 	background-size: 100% 4px !important;
 	background-color: transparent;
 	z-index: 1;
+	border-radius: 4px 6px;
 }
 .bonus-usuario > .p-datatable-wrapper > .p-datatable-table > .p-datatable-tbody > .resaltar-exclusivo {
 	height: 4px;
@@ -2460,7 +2468,7 @@ export default {
 	background-image: url("/assets/img/eventos/marco-tabla.png") !important;
 	background-repeat: no-repeat;
 	background-size: 100% 99%;
-	padding: 46px;
+	padding: 46px 60px 46px 65px;
 }
 
 .barra-progreso-horas {

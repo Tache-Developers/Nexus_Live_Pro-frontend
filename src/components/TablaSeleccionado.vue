@@ -259,6 +259,7 @@ export default {
 			creadores_seleccionados: [],
 			mostrar_modal: false,
 			guardando_datos: false,
+			id_current_tabla: "",
 		},
 		paquete_creador_tabla: { tabla: null, creadores: [] },
 		paquete_bonus_tabla: {
@@ -851,6 +852,7 @@ export default {
 				//Paquete para guardar creadores
 				this.paquete_creador_tabla.tabla = tabla._id;
 				this.paquete_creador_tabla.creadores = tabla.creadores;
+				this.dialogCreadores.id_current_tabla = tabla._id;
 				this.dialogCreadores.mostrar_modal = true;
 			}
 		},

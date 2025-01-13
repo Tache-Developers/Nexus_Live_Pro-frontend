@@ -133,6 +133,17 @@
                                 </span>
                             </div>
                         </div>
+                        <div class="batallas flex align-items-center decorador gap-2 p-2">
+							<div class="icono">
+								<img src="/assets/img/perfil/iconos/seguidores.png" alt="Batallas" />
+							</div>
+							<div class="informacion flex flex-column font-gamers uppercase text-white text-left line-height-2">
+								<span class="w-full word-break text-xl color-blue">Batallas</span>
+								<span class="font-bold text-2xl">
+									{{ parseInt(store.getUsuario().batallas).toLocaleString() }}
+								</span>
+							</div>
+						</div>
                     </div>
                     <div class="flex flex-column gap-4">
                         <div class="fans flex align-items-center decorador gap-2 p-2">

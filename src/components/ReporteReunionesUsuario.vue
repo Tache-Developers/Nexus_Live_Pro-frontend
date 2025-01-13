@@ -193,10 +193,29 @@ export default {
 	}),
 	methods: {
 		getReunionesDestacadas() {
+			let reuniones = [];
 			if (this.miCalendario.reuniones_asistencia.length >= this.reunionesConfig.min_reuniones) {
-				return this.miCalendario.reuniones_asistencia.slice(0, this.reunionesConfig.min_reuniones);
+				reuniones = this.miCalendario.reuniones_asistencia.slice(0, this.reunionesConfig.min_reuniones);
 			}
-			return this.miCalendario.reuniones_bonus_actual.filter((r) => r.estado == "Finalizada").slice(0, this.reunionesConfig.min_reuniones);
+			reuniones = this.miCalendario.reuniones_asistencia.slice(0, this.reunionesConfig.min_reuniones);
+			if (reuniones.length < this.reunionesConfig.min_reuniones) {
+				const finalizados = this.miCalendario.reuniones_bonus_actual.filter((r) => r.estado == "Finalizada");
+				for (let i = 0; i < finalizados.length; i++) {
+					const reunion = finalizados[i];
+					const isInReuniones = reuniones.findIndex((r) => r._id == reunion._id);
+					if (isInReuniones == -1) {
+						if (reuniones.length < this.reunionesConfig.min_reuniones) {
+							reuniones.push(reunion);
+						} else {
+							break;
+						}
+					}
+				}
+			}
+			reuniones.sort((f1, f2) => {
+				return new Date(f1.fecha).getTime() - new Date(f2.fecha).getTime();
+			});
+			return reuniones;
 		},
 		cumpleEstado(estado = null, reunion = null) {
 			if (estado != null && reunion != null) {

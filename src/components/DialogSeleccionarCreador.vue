@@ -78,7 +78,7 @@
 										v-for="(item, index) in props.items"
 										:key="index"
 										class="relative w-max flex flex-column align-items-center white-space-nowrap overflow-hidden text-overflow-ellipsis item-creador border-round"
-										:class="[isSeleccionado(item._id) ? 'seleccionado' : 'no-seleccionado']"
+										:class="[isSeleccionado(item._id) ? 'seleccionado' : 'no-seleccionado', isOtraTabla(item._id) ? 'opacity-40' : null]"
 										style="min-width: 72px; max-width: 72px; max-height: max-content; padding: 2px"
 									>
 										<Image :src="item.foto" class="border-circle" :alt="item.usuario">
@@ -91,7 +91,18 @@
 											</template>
 										</Image>
 										<span class="text-sm white-space-nowrap overflow-hidden text-overflow-ellipsis w-full">{{ item.usuario }}</span>
-										<Checkbox multiple v-model="creadoresSelect" class="absolute top-0 right-0" :value="item._id" />
+										<Checkbox
+											multiple
+											v-model="creadoresSelect"
+											class="absolute top-0 right-0"
+											:value="item._id"
+											v-if="!isOtraTabla(item._id)"
+										/>
+										<div
+											v-if="isOtraTabla(item._id)"
+											class="w-full h-full absolute"
+											v-tooltip.top="'No se puede seleccionar porque ya está en otra tabla'"
+										/>
 									</div>
 								</div>
 							</template>
@@ -116,6 +127,11 @@ import { Codemirror } from "vue-codemirror";
 import { oneDark } from "@codemirror/theme-one-dark";
 export default {
 	props: {
+		id_current_tabla: {
+			type: String,
+			default: "null",
+			required: true,
+		},
 		creadores_seleccionados: {
 			type: Array,
 			default: [],
@@ -167,12 +183,20 @@ export default {
 			"indent-with-tab": true,
 			extensions: [oneDark],
 		},
+		tablas: [],
 		creadores: [],
 		creadores_copia: [],
 		creadores_copia_buscar: [],
 		creadoresSelect: [],
 	}),
 	methods: {
+		isOtraTabla(usuario = null) {
+			if (usuario != null) {
+				const otraTabla = this.tablas.findIndex((tabla) => tabla._id != this.$props.id_current_tabla && tabla.creadores.includes(usuario));
+				return otraTabla > -1;
+			}
+			return false;
+		},
 		isSeleccionado(id) {
 			return this.creadoresSelect.includes(id);
 		},
@@ -192,7 +216,7 @@ export default {
 			let mod = 0;
 			this.creadores_copia.forEach((row) => {
 				if (accion === "agregar") {
-					if (!this.isSeleccionado(row._id)) {
+					if (!this.isSeleccionado(row._id) && !this.isOtraTabla(row._id)) {
 						this.creadoresSelect.push(row._id);
 						mod++;
 					}
@@ -233,6 +257,40 @@ export default {
 			this.creadoresSelect = [];
 			this.modoAdd = "por_criterio";
 			this.$emit("cerrarDialog");
+		},
+		async getTablas() {
+			await axios
+				.get(`${this.API}/tabla-seleccionado`, this.token)
+				.then((resp) => {
+					this.tablas = resp.data;
+				})
+				.catch((error) => {
+					switch (error.response.data.statusCode) {
+						case 400:
+							//Bad Request
+							this.$toast.add({
+								severity: "error",
+								summary: "Obtener tablas",
+								detail: "Formato de los datos incorrecto",
+								life: 1600,
+							});
+							break;
+						case 401:
+							//Se le termino la sesión
+							this.store.clearUser();
+							this.$router.push("/login");
+							break;
+						default:
+							this.$toast.add({
+								severity: "error",
+								summary: "Obtener tablas",
+								detail: "Sucedió un error, comuníquese con soporte",
+								life: 1600,
+							});
+							console.log("Error: ", error);
+							break;
+					}
+				});
 		},
 		async getCreadores() {
 			await axios
@@ -304,6 +362,7 @@ export default {
 		this.store = useStoreEvento();
 
 		this.token.headers.Authorization = `Bearer ${this.store.getToken()}`;
+		await this.getTablas();
 		await this.getCreadores();
 	},
 };

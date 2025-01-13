@@ -39,16 +39,14 @@
 		</Panel>
 		<Dialog
 			v-model:visible="modalCrearReunion"
-			:header="(idCurrentReunion != null ? 'Editar' : 'Crear') + ' reunión'"
-			:style="{ width: idCurrentReunion != null ? '55rem' : '45rem' }"
+			header="Crear reunión"
+			:style="{ width: '45rem' }"
 			:breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
 			position="center"
 			:modal="true"
 			:draggable="false"
-			:maximizable="idCurrentReunion != null"
 			@hide="
 				() => {
-					idCurrentReunion = null;
 					paqueteReunion = {
 						asunto: null,
 						fecha: new Date(),
@@ -58,116 +56,135 @@
 				}
 			"
 		>
-			<template #header>
-				<div class="botones flex flex-wrap gap-2 w-full justify-content-between">
-					<span class="p-dialog-title">{{ idCurrentReunion != null ? "Editar" : "Crear" }} reunión</span>
-
-					<div class="flex flex-wrap gap-2">
+			<div class="flex w-full flex-wrap flex-column justify content-center gap-2">
+				<div class="w-full flex flex-column gap-1">
+					<label for="asunto" class="m-0 font-bold">Asunto</label>
+					<InputText v-model="paqueteReunion.asunto" id="asunto" placeholder="Asunto de la reunión" />
+				</div>
+				<div class="w-full flex flex-column gap-1">
+					<label for="fecha" class="m-0 font-bold">Fecha</label>
+					<Calendar id="fecha" v-model="paqueteReunion.fecha" :minDate="new Date()" showTime hourFormat="24" />
+				</div>
+			</div>
+			<template #footer>
+				<Button label="Cancelar" @click="modalCrearReunion = false" autofocus text severity="danger" />
+				<Button label="Crear" :disabled="btnCrear" @click="crearReunion" />
+			</template>
+		</Dialog>
+		<Dialog
+			v-model:visible="modalEditarReunion"
+			header="Editar reunión"
+			:style="{ width: '55rem' }"
+			:breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
+			position="center"
+			:modal="true"
+			:draggable="false"
+			:maximizable="true"
+			@hide="
+				() => {
+					activeIndexReunion = -1;
+					paqueteReunion = {
+						asunto: null,
+						fecha: new Date(),
+						asistentes: [],
+						estado: null,
+					};
+				}
+			"
+		>
+			<TabView
+				:scrollable="true"
+				class="tabReunionesAdmin"
+				:activeIndex="activeIndexReunion"
+				@update:activeIndex="(index) => (activeIndexReunion = index)"
+			>
+				<TabPanel
+					v-for="(reunion, index) in dataReuniones"
+					:key="index"
+					:header="reunion.asunto"
+					:headerClass="index == 0 ? 'tab-primero' : 'tab-sig'"
+				>
+					<div class="botones flex flex-wrap gap-2 w-full justify-content-end">
+						<Button @click="confirmEliminarReunion(reunion._id)" label="Eliminar Reunión" severity="danger" icon="pi pi-trash" />
 						<Button
-							v-if="idCurrentReunion != null && paqueteReunion.estado != 'Finalizada'"
-							@click="confirmEliminarReunion"
-							label="Eliminar Reunión"
-							severity="danger"
-							icon="pi pi-trash"
-						/>
-						<Button
-							v-if="idCurrentReunion != null && paqueteReunion.estado != 'Finalizada'"
-							@click="finalizarReunion"
+							@click="finalizarReunion(reunion._id)"
+							v-if="reunion.estado != 'Finalizada'"
 							label="Finalizar Reunión"
 							icon="pi pi-check"
 							class="mr-2"
 						/>
 					</div>
-				</div>
-			</template>
-			<div class="flex w-full flex-wrap flex-column justify content-center gap-2">
-				<div class="w-full flex flex-column gap-1">
-					<label for="asunto" class="m-0 font-bold">Asunto</label>
-					<InputText
-						v-model="paqueteReunion.asunto"
-						:readonly="['Finalizada'].includes(paqueteReunion.estado)"
-						:disabled="['Finalizada'].includes(paqueteReunion.estado)"
-						id="asunto"
-						placeholder="Asunto de la reunión"
-					/>
-				</div>
-				<div class="w-full flex flex-column gap-1">
-					<label for="fecha" class="m-0 font-bold">Fecha</label>
-					<Calendar
-						id="fecha"
-						v-model="paqueteReunion.fecha"
-						:readonly="['Finalizada'].includes(paqueteReunion.estado)"
-						:disabled="['Finalizada'].includes(paqueteReunion.estado)"
-						:minDate="new Date()"
-						showTime
-						hourFormat="24"
-					/>
-				</div>
-				<div class="w-full flex-flex-column gap-1" v-if="['Finalizada'].includes(paqueteReunion.estado) || idCurrentReunion != null">
-					<h2 class="m-0">Asistencia confirmada</h2>
-					<DataTable
-						:value="paqueteReunion.asistentes"
-						dataKey="usuario"
-						:filters="filtersAsistente"
-						sortField="usuario"
-						:sortOrder="1"
-						paginator
-						:rows="10"
-						:rowsPerPageOptions="[5, 10, 20, 50]"
-						class="pt-0"
-						tableStyle="max-height:400px"
-					>
-						<template #header>
-							<div class="flex flex-column w-full gap-2">
-								<span class="p-input-icon-left">
-									<i class="pi pi-search" />
-									<InputText v-model="filtersAsistente['global'].value" placeholder="Buscar..." />
-								</span>
-							</div>
-						</template>
-						<Column field="usuario" header="Creador" />
-					</DataTable>
-				</div>
+					<div class="flex w-full flex-wrap flex-column justify content-center gap-2">
+						<div class="w-full flex flex-column gap-1">
+							<label for="asunto" class="m-0 font-bold">Asunto</label>
+							<InputText v-model="reunion.asunto" id="asunto" placeholder="Asunto de la reunión" />
+						</div>
+						<div class="w-full flex flex-column gap-1">
+							<label for="fecha" class="m-0 font-bold">Fecha</label>
+							<Calendar id="fecha" v-model="reunion.fecha" :minDate="new Date()" showTime hourFormat="24" />
+						</div>
+						<div class="w-full flex-flex-column gap-1">
+							<h2 class="m-0">Asistencia confirmada</h2>
+							<DataTable
+								:value="reunion.asistentes"
+								dataKey="usuario"
+								:filters="filtersAsistente"
+								sortField="usuario"
+								:sortOrder="1"
+								paginator
+								:rows="10"
+								:rowsPerPageOptions="[5, 10, 20, 50]"
+								class="pt-0"
+								tableStyle="max-height:400px"
+							>
+								<template #header>
+									<div class="flex flex-column w-full gap-2">
+										<span class="p-input-icon-left">
+											<i class="pi pi-search" />
+											<InputText v-model="filtersAsistente['global'].value" placeholder="Buscar..." />
+										</span>
+									</div>
+								</template>
+								<Column field="usuario" header="Creador" />
+							</DataTable>
+						</div>
 
-				<div class="w-full flex flex-column gap-2 mt-2" v-if="paqueteReunion.estado != 'Finalizada' && idCurrentReunion != null">
-					<h2 class="m-0 mt-4">Marcar Asistencia</h2>
-					<DataTable
-						v-model:selection="paqueteReunion.asistentes"
-						:value="creadores"
-						dataKey="_id"
-						:filters="filtersCreador"
-						sortField="usuario"
-						:sortOrder="1"
-						paginator
-						:rows="10"
-						:rowsPerPageOptions="[5, 10, 20, 50]"
-					>
-						<template #header>
-							<div class="flex flex-column w-full gap-2">
-								<span class="p-input-icon-left">
-									<i class="pi pi-search" />
-									<InputText v-model="filtersCreador['global'].value" placeholder="Buscar..." />
-								</span>
-								<p class="m-0 text-center text-xl mt-2">
-									{{ paqueteReunion.asistentes.length }}
-									{{ paqueteReunion.asistentes.length == 1 ? "creador asistente" : "creadores asistentes" }}
-								</p>
-							</div>
-						</template>
-						<Column selectionMode="multiple" headerStyle="width: 3rem" />
-						<Column field="usuario" header="Creador" />
-					</DataTable>
-				</div>
-			</div>
+						<div class="w-full flex flex-column gap-2 mt-2">
+							<h2 class="m-0 mt-4">Marcar Asistencia</h2>
+							<DataTable
+								v-model:selection="reunion.asistentes"
+								:value="creadores"
+								dataKey="_id"
+								:filters="filtersCreador"
+								sortField="usuario"
+								:sortOrder="1"
+								paginator
+								:rows="10"
+								:rowsPerPageOptions="[5, 10, 20, 50]"
+							>
+								<template #header>
+									<div class="flex flex-column w-full gap-2">
+										<span class="p-input-icon-left">
+											<i class="pi pi-search" />
+											<InputText v-model="filtersCreador['global'].value" placeholder="Buscar..." />
+										</span>
+										<p class="m-0 text-center text-xl mt-2">
+											{{ reunion.asistentes.length }}
+											{{ reunion.asistentes.length == 1 ? "creador asistente" : "creadores asistentes" }}
+										</p>
+									</div>
+								</template>
+								<Column selectionMode="multiple" headerStyle="width: 3rem" />
+								<Column field="usuario" header="Creador" />
+							</DataTable>
+						</div>
+					</div>
+				</TabPanel>
+			</TabView>
+
 			<template #footer>
-				<Button label="Cancelar" @click="modalCrearReunion = false" autofocus text severity="danger" />
-
-				<Button
-					:label="idCurrentReunion != null ? 'Editar' : 'Crear'"
-					:disabled="btnCrear"
-					@click="crearReunion"
-					v-if="paqueteReunion.estado != 'Finalizada'"
-				/>
+				<Button label="Cancelar" @click="modalEditarReunion = false" autofocus text severity="danger" />
+				<Button label="Guardar cambios" :disabled="btnCrear" @click="crearReunion" />
 			</template>
 		</Dialog>
 		<Dialog
@@ -268,34 +285,45 @@ export default {
 			},
 		],
 		reunionesCalendar: [],
-		idCurrentReunion: null,
+		dataReuniones: [],
+		activeIndexReunion: -1,
+		modalEditarReunion: false,
 	}),
 	methods: {
 		clickFecha(dataCalendar) {
-			if (dataCalendar.attributes.length == 1) {
-				const reunion = this.reuniones.find((reunion) => reunion._id == dataCalendar.attributes[0].key);
-				if (reunion != null) {
-					this.idCurrentReunion = reunion._id;
-					this.paqueteReunion = { ...reunion, fecha: new Date(reunion.fecha) };
-					this.modalCrearReunion = true;
+			if (dataCalendar.attributes.length > 0) {
+				const r = dataCalendar.attributes.flatMap((a) => a.key);
+				this.dataReuniones = this.reuniones
+					.filter((re) => r.includes(re._id))
+					.map((reu) => {
+						return {
+							...reu,
+							fecha: new Date(reu.fecha),
+						};
+					});
+				if (this.dataReuniones.length > 0) {
+					this.activeIndexReunion = 0;
+					this.modalEditarReunion = true;
 				}
 			}
 		},
-		confirmEliminarReunion() {
-			this.$confirm.require({
-				message: `¿Está seguro de eliminar esta reunión?`,
-				header: "Eliminar reunión",
-				icon: "pi pi-exclamation-triangle",
-				rejectClass: "p-button-secondary p-button-outlined",
-				rejectLabel: "No, cancelar",
-				acceptLabel: "Sí, eliminar",
-				acceptClass: "p-button-danger",
-				defaultFocus: "reject",
-				accept: () => {
-					this.eliminarReunion();
-				},
-				reject: () => {},
-			});
+		confirmEliminarReunion(reunion = null) {
+			if (reunion != null) {
+				this.$confirm.require({
+					message: `¿Está seguro de eliminar esta reunión?`,
+					header: "Eliminar reunión",
+					icon: "pi pi-exclamation-triangle",
+					rejectClass: "p-button-secondary p-button-outlined",
+					rejectLabel: "No, cancelar",
+					acceptLabel: "Sí, eliminar",
+					acceptClass: "p-button-danger",
+					defaultFocus: "reject",
+					accept: () => {
+						this.eliminarReunion(reunion);
+					},
+					reject: () => {},
+				});
+			}
 		},
 		async configReuniones() {
 			this.btnCrear = true;
@@ -338,8 +366,8 @@ export default {
 		},
 		async crearReunion() {
 			this.btnCrear = true;
-			if (this.paqueteReunion.asunto != null && this.paqueteReunion.asunto != "" && this.paqueteReunion.fecha != null) {
-				if (this.idCurrentReunion == null) {
+			if (this.activeIndexReunion == -1) {
+				if (this.paqueteReunion.asunto != null && this.paqueteReunion.asunto != "" && this.paqueteReunion.fecha != null) {
 					await axios
 						.post(`${this.API}/reunion/crear`, this.paqueteReunion, this.headers)
 						.then((resp) => {
@@ -388,28 +416,29 @@ export default {
 							}
 						});
 				} else {
-					this.editarReunion();
+					this.$toast.add({
+						severity: "info",
+						summary: "Crear reunión",
+						detail: "Debes llenar todos los campos",
+						life: 1650,
+					});
 				}
 			} else {
-				this.$toast.add({
-					severity: "info",
-					summary: "Crear reunión",
-					detail: "Debes llenar todos los campos",
-					life: 1650,
-				});
+				this.editarReunion();
 			}
 			this.btnCrear = false;
 		},
 		async editarReunion() {
 			this.btnCrear = true;
-			const paquete = { ...this.paqueteReunion };
+			const paquete = { ...this.dataReuniones[this.activeIndexReunion] };
+			const id = paquete._id;
+			delete paquete._id;
 			paquete.asistentes = paquete.asistentes.flatMap((c) => c._id);
 			await axios
-				.put(`${this.API}/reunion/${this.idCurrentReunion}`, paquete, this.headers)
+				.put(`${this.API}/reunion/${id}`, paquete, this.headers)
 				.then((resp) => {
 					if (!resp.data.error) {
-						this.modalCrearReunion = false;
-						this.idCurrentReunion = null;
+						this.modalEditarReunion = false;
 						this.paqueteReunion = {
 							asunto: null,
 							fecha: new Date(),
@@ -534,14 +563,13 @@ export default {
 					}
 				});
 		},
-		async eliminarReunion() {
+		async eliminarReunion(reunion = null) {
 			this.btnCrear = true;
 			await axios
-				.delete(`${this.API}/reunion/${this.idCurrentReunion}`, this.headers)
+				.delete(`${this.API}/reunion/${reunion}`, this.headers)
 				.then((resp) => {
 					if (!resp.data.error) {
-						this.modalCrearReunion = false;
-						this.idCurrentReunion = null;
+						this.modalEditarReunion = false;
 						this.getReuniones();
 					}
 					this.$toast.add({
@@ -624,8 +652,8 @@ export default {
 				});
 			this.btnCrear = false;
 		},
-		async finalizarReunion() {
-			if (this.idCurrentReunion != null) {
+		async finalizarReunion(reunion = null) {
+			if (reunion != null) {
 				this.btnCrear = true;
 				this.$toast.add({
 					severity: "info",
@@ -634,11 +662,10 @@ export default {
 					life: 1600,
 				});
 				await axios
-					.put(`${this.API}/reunion/${this.idCurrentReunion}/finalizar`, {}, this.headers)
+					.put(`${this.API}/reunion/${reunion}/finalizar`, {}, this.headers)
 					.then((resp) => {
 						if (!resp.data.error) {
-							this.modalCrearReunion = false;
-							this.idCurrentReunion = null;
+							this.modalEditarReunion = false;
 							this.getReuniones();
 						}
 						this.$toast.add({
