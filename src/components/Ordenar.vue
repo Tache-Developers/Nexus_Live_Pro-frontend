@@ -10,7 +10,7 @@
 						<div class="form-container">
 
 							<div class="flex flex-column gap-1 mb-2">
-								<label class="font-bold block">Search</label>
+								<label class="font-bold block">Buscar</label>
 								<AutoComplete v-model="servicioSelect" optionLabel="title" @complete="search"
 									:suggestions="searchServicesInput" @update:modelValue="selectServicioFunction" />
 							</div>
