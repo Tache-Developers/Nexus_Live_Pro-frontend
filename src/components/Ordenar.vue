@@ -2,37 +2,33 @@
 	<Panel class="w-full h-full sin-panel-header ordenar border-none">
 		<div class="flex flex-wrap justify-content-center align-items-center">
 			<Card style="width: 35rem; overflow: hidden" class="p-3 shadow-6">
-				<template #title><div class="m-0 p-0 text-center w-full text-break">Crear orden</div></template>
+				<template #title>
+					<div class="m-0 p-0 text-center w-full text-break">Crear orden</div>
+				</template>
 				<template #content>
 					<form ref="formServicio">
 						<div class="form-container">
+
+							<div class="flex flex-column gap-1 mb-2">
+								<label class="font-bold block">Search</label>
+								<AutoComplete v-model="servicioSelect" optionLabel="title" @complete="search"
+									:suggestions="searchServicesInput" @update:modelValue="selectServicioFunction" />
+							</div>
 							<div class="flex flex-column gap-1 mb-2">
 								<label class="font-bold block">Categorías</label>
-								<Dropdown
-									v-model="categoriaSelect"
-									:options="categoriasFilter"
-									emptyMessage="Sin categorías disponibles"
-									filter
-									:filterFields="['service', 'name']"
-									optionLabel="categoria"
-									optionValue="categoria"
-									placeholder="Selecciona categoría para filtrar servicios"
-									aria-describedby="categoria-help"
-								/>
-								<small id="categoria-help">Selecciona una categoría para filtrar los servicios.</small>
+								<Dropdown v-model="categoriaSelect" :options="categoriasFilter"
+									emptyMessage="Sin categorías disponibles" filter optionLabel="categoria"
+									optionValue="categoria" placeholder="Selecciona categoría para filtrar servicios"
+									aria-describedby="categoria-help" />
+								<small id="categoria-help"> Selecciona una categoría para filtrar los servicios.
+								</small>
 							</div>
 							<div class="flex flex-column gap-1 mb-2">
 								<label class="font-bold block">Servicios</label>
-								<Dropdown
-									v-model="servicioSelect"
-									showClear
-									:options="servicios"
-									emptyMessage="Sin servicios disponibles"
-									filter
-									optionLabel="name"
-									@update:modelValue="selectServicio"
-									placeholder="Selecciona servicio"
-								>
+								<Dropdown v-model="servicioSelect" showClear :options="searchServicesByCategory"
+									emptyMessage="Sin servicios disponibles" filter optionLabel="name"
+									:filterFields="['service', 'name']" @update:modelValue="selectServicioFunction"
+									placeholder="Selecciona servicio">
 									<template #option="props">
 										<div class="flex align-items-center flex-wrap">
 											<div>
@@ -45,14 +41,8 @@
 							</div>
 							<div class="flex flex-column gap-1 mb-2">
 								<label class="font-bold block">Cantidad</label>
-								<InputText
-									type="number"
-									v-model="paquetePromocion.cantidad"
-									:min="min"
-									:max="max"
-									@update:modelValue="calcularPago"
-									aria-describedby="cantidad-help"
-								/>
+								<InputText type="number" v-model="paquetePromocion.cantidad" :min="min" :max="max"
+									@update:modelValue="calcularPago" aria-describedby="cantidad-help" />
 								<small id="cantidad-help">{{ help_cantidad }}</small>
 							</div>
 							<div class="flex flex-column gap-1 mb-2">
@@ -99,6 +89,7 @@ export default {
 		categoriaSelect: null,
 		categoriasFilter: [],
 		servicioSelect: null,
+		searchServicesInput: [],
 		servicios: [],
 		serviciosActivos: [],
 		paquetesRecargas: [],
@@ -118,13 +109,62 @@ export default {
 			handler(newVal) {
 				if (newVal) {
 					this.servicios = this.serviciosActivos.filter((s) => s.category == newVal);
+				} else {
+					this.servicios = this.serviciosActivos;
 				}
 			},
 			deep: true,
 		},
+		servicioSelect: {
+			handler(newVal) {
+				if(newVal) {
+					this.categoriaSelect = newVal.category
+					
+				}
+			},
+			deep: true,
+		}
+	},
+	computed: {
+		searchServices() {
+			return this.servicios.map(s => {
+				return {
+					...s,
+					title: `${s.service} ${s.proveedor.nombre} ${s.name}`
+				}
+			})
+		},
+		searchServicesByCategory() {
+			if(!this.categoriaSelect){
+				return this.searchServices;
+			}
+			return this.searchServices.filter((service) => service.category == this.categoriaSelect);
+		}
 	},
 	methods: {
-		selectServicio(event) {
+		search(event) {
+			setTimeout(() => {
+				if (!event.query.trim().length) {
+					this.searchServicesInput = [...this.searchServices];
+				} else {
+					this.searchServicesInput = this.searchServices.filter((s) => {
+						return s.title.toLowerCase().startsWith(event.query.toLowerCase());
+					});
+				}
+			}, 250);
+		},
+		selectServicioFunction(event) {
+			if (typeof event === 'string' || !event) {
+				this.paquetePromocion.proveedor = null;
+				this.help_cantidad = "Cantidad del servicio.";
+				this.paquetePromocion.service = null;
+				this.paquetePromocion.descripcion = null;
+				this.min = null;
+				this.max = null;
+				this.precioRate = null;
+				this.paquetePromocion.pagar = 0;
+				return;
+			}
 			this.paquetePromocion.proveedor = event.proveedor._id;
 			this.help_cantidad = `Puedes ordenar entre ${event.min} y ${event.max}`;
 			this.paquetePromocion.service = event.service;
@@ -161,6 +201,12 @@ export default {
 				});
 		},
 		async getServiciosActive() {
+			this.$toast.add({
+				severity: "info",
+				summary: "Obtener servicios Activos",
+				detail: "Cargando las promociones",
+				life: 7500,
+			});
 			await axios
 				.get(`${this.API}/promocion/servicesActive`, this.token)
 				.then((response) => {
@@ -175,6 +221,12 @@ export default {
 					/* if (this.categoriasFilter.length > 0) {
 						this.categoriaSelect = this.categoriasFilter[0].categoria;
 					} */
+					this.$toast.add({
+						severity: "success",
+						summary: "Obtener servicios Activos",
+						detail: "Ordenes listas :)",
+						life: 2500,
+					});
 				})
 				.catch((error) => {
 					switch (error.response.data.statusCode) {
@@ -194,6 +246,7 @@ export default {
 							break;
 					}
 				});
+			
 		},
 		async ordenar() {
 			if (this.paquetePromocion.service != null) {
