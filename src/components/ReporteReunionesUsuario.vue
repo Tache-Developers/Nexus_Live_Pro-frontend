@@ -221,11 +221,12 @@ export default {
 			if (estado != null && reunion != null) {
 				const r = this.miCalendario.reuniones_bonus_actual.find((re) => re._id == reunion);
 				if (r != null) {
-					if (r.estado == "Pendiente" && estado == "Pendiente") {
+					const asistentes = r.asistentes.flatMap((a) => a._id);
+					if (estado == "Fallo" && r.estado == "Finalizada" && !asistentes.includes(this.store.getId())) {
 						return true;
-					} else if (r.estado == "Finalizada" && estado == "Asistio" && r.asistentes.includes(this.store.getId())) {
+					} else if (estado == "Pendiente" && r.estado == "Pendiente" && !asistentes.includes(this.store.getId())) {
 						return true;
-					} else if (r.estado == "Finalizada" && estado == "Fallo" && !r.asistentes.includes(this.store.getId())) {
+					} else if (estado == "Asistio" && asistentes.includes(this.store.getId())) {
 						return true;
 					}
 				}

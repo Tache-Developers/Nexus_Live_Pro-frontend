@@ -11,10 +11,6 @@
 		class="seleccionar-creador"
 		@hide="cerrarDialog"
 	>
-		<!-- <SeleccionarCreador
-			:creadores_seleccionados="creadores_seleccionados"
-			@creadoresSeleccionados="(c) => (paquete_creador_tabla.creadores = c)"
-		/> -->
 		<div class="flex w-full flex-wrap flex-column justify content-center gap-4">
 			<div class="modo-seleccion w-full flex flex-column gap-1">
 				<label class="m-0 font-bold">Seleccionar a creadores</label>
@@ -49,7 +45,7 @@
 							:value="creadores_copia"
 							layout="grid"
 							class="overflow-auto py-2 h-full dataview-creadores"
-							paginator
+							:paginator="!loadingData"
 							:rows="10"
 							:totalRecords="creadores_copia.length"
 							:rowsPerPageOptions="[10, 25, 50, 100]"
@@ -61,7 +57,7 @@
 								<p class="w-full text-center font-bold">Sin creadores</p>
 							</template>
 							<template #header>
-								<div class="flex flex-column gap-2">
+								<div class="flex flex-column gap-2" v-if="!loadingData">
 									<span class="p-input-icon-left">
 										<i class="pi pi-search" />
 										<InputText v-model="nombreBuscar" placeholder="Buscar por nombre" />
@@ -78,10 +74,15 @@
 										v-for="(item, index) in props.items"
 										:key="index"
 										class="relative w-max flex flex-column align-items-center white-space-nowrap overflow-hidden text-overflow-ellipsis item-creador border-round"
-										:class="[isSeleccionado(item._id) ? 'seleccionado' : 'no-seleccionado', isOtraTabla(item._id) ? 'opacity-40' : null]"
+										:class="[
+											isSeleccionado(item._id) && !loadingData ? 'seleccionado' : 'no-seleccionado',
+											isOtraTabla(item._id) && !loadingData ? 'opacity-40' : null,
+										]"
 										style="min-width: 72px; max-width: 72px; max-height: max-content; padding: 2px"
 									>
-										<Image :src="item.foto" class="border-circle" :alt="item.usuario">
+										<Skeleton v-if="loadingData" shape="circle" size="4rem" class="img-creador-seleccionar" />
+										<Skeleton v-if="loadingData" width="5rem" borderRadius="16px" />
+										<Image v-if="!loadingData" :src="item.foto" class="border-circle" :alt="item.usuario">
 											<template #image>
 												<img
 													:src="item.foto == '' ? '/assets/img/avatar-default.jpg' : item.foto"
@@ -90,16 +91,18 @@
 												/>
 											</template>
 										</Image>
-										<span class="text-sm white-space-nowrap overflow-hidden text-overflow-ellipsis w-full">{{ item.usuario }}</span>
+										<span v-if="!loadingData" class="text-sm white-space-nowrap overflow-hidden text-overflow-ellipsis w-full">
+											{{ item.usuario }}
+										</span>
 										<Checkbox
 											multiple
 											v-model="creadoresSelect"
 											class="absolute top-0 right-0"
 											:value="item._id"
-											v-if="!isOtraTabla(item._id)"
+											v-if="!isOtraTabla(item._id) && !loadingData"
 										/>
 										<div
-											v-if="isOtraTabla(item._id)"
+											v-if="isOtraTabla(item._id) && !loadingData"
 											class="w-full h-full absolute"
 											v-tooltip.top="'No se puede seleccionar porque ya está en otra tabla'"
 										/>
@@ -156,6 +159,7 @@ export default {
 			},
 		},
 		store: null,
+		loadingData: false,
 		filtros: [
 			{ label: "Todos", min: null, max: null },
 			{ label: "0 - 50K", min: 0, max: 50000 },
@@ -259,6 +263,7 @@ export default {
 			this.$emit("cerrarDialog");
 		},
 		async getTablas() {
+			this.loadingData = true;
 			await axios
 				.get(`${this.API}/tabla-seleccionado`, this.token)
 				.then((resp) => {
@@ -327,6 +332,7 @@ export default {
 							break;
 					}
 				});
+			this.loadingData = false;
 		},
 	},
 	watch: {
@@ -352,6 +358,10 @@ export default {
 			this.$emit("creadoresSeleccionados", newValue);
 		}, */
 		mostrar_modal(newValue) {
+			if (newValue) {
+				this.getTablas();
+				this.getCreadores();
+			}
 			this.modalAddCreadores = newValue;
 		},
 		creadores_seleccionados(newValue) {
@@ -362,8 +372,6 @@ export default {
 		this.store = useStoreEvento();
 
 		this.token.headers.Authorization = `Bearer ${this.store.getToken()}`;
-		await this.getTablas();
-		await this.getCreadores();
 	},
 };
 </script>
