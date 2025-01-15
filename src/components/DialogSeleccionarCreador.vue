@@ -54,10 +54,13 @@
 							ref="dtCreadores"
 						>
 							<template #empty>
-								<p class="w-full text-center font-bold">Sin creadores</p>
+								<div class="flex flex-column gap-1 align-items-center">
+									<p class="w-full text-center font-bold" v-if="!loadingData">Sin creadores</p>
+									<ProgressSpinner style="width: 80px; height: 80px" v-if="loadingData" />
+								</div>
 							</template>
 							<template #header>
-								<div class="flex flex-column gap-2" v-if="!loadingData">
+								<div class="flex flex-column gap-2" v-if="!loadingData && creadores_copia.length > 0">
 									<span class="p-input-icon-left">
 										<i class="pi pi-search" />
 										<InputText v-model="nombreBuscar" placeholder="Buscar por nombre" />
@@ -159,7 +162,7 @@ export default {
 			},
 		},
 		store: null,
-		loadingData: false,
+		loadingData: true,
 		filtros: [
 			{ label: "Todos", min: null, max: null },
 			{ label: "0 - 50K", min: 0, max: 50000 },
@@ -263,7 +266,6 @@ export default {
 			this.$emit("cerrarDialog");
 		},
 		async getTablas() {
-			this.loadingData = true;
 			await axios
 				.get(`${this.API}/tabla-seleccionado`, this.token)
 				.then((resp) => {
@@ -298,6 +300,7 @@ export default {
 				});
 		},
 		async getCreadores() {
+			this.loadingData = true;
 			await axios
 				.get(`${this.API}/usuario`, this.token)
 				.then((resp) => {
