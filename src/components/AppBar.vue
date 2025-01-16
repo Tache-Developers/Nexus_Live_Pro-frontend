@@ -1,6 +1,6 @@
 <template>
 	<div class="appBarContainer">
-		<Toast />
+		<Toast group="appBar" />
 		<Sidebar v-model:visible="visibleSidebar">
 			<Menu :model="itemsMenu" class="w-full">
 				<template #submenuheader="{ item }">
@@ -261,7 +261,7 @@ export default {
 							this.$router.push("/login");
 							break;
 						default:
-							this.$toast.add({ severity: "error", summary: "Datos del usuario", detail: "Ocurrió un problema inesperado!", life: 1600 });
+							this.$toast.add({group:"appBar", severity: "error", summary: "Datos del usuario", detail: "Ocurrió un problema inesperado!", life: 1600 });
 							console.log("Error: ", error);
 							break;
 					}
@@ -301,7 +301,7 @@ export default {
 							if (r.data) {
 								this.addCreador = false;
 							}
-							this.$toast.add({
+							this.$toast.add({group:"appBar",
 								severity: "success",
 								summary: "Credenciales backstage",
 								detail: r.data ? "Credenciales actualizadas correctamente" : "No se pudo actualizar las credenciales",
@@ -316,16 +316,16 @@ export default {
 									this.$router.push("/login");
 									break;
 								default:
-									this.$toast.add({ severity: "error", summary: `Sucedió un problema`, detail: error.response.data.message, life: 1500 });
+									this.$toast.add({group:"appBar", severity: "error", summary: `Sucedió un problema`, detail: error.response.data.message, life: 1500 });
 									console.log("Error: ", error);
 									break;
 							}
 						});
 				} else {
-					this.$toast.add({ severity: "error", summary: "Credenciales", detail: "Ingresa un correo válido", life: 1600 });
+					this.$toast.add({group:"appBar" ,severity: "error", summary: "Credenciales", detail: "Ingresa un correo válido", life: 1600 });
 				}
 			} else {
-				this.$toast.add({ severity: "error", summary: "Credenciales", detail: "Debes llenar todos los campos", life: 1600 });
+				this.$toast.add({group:"appBar", severity: "error", summary: "Credenciales", detail: "Debes llenar todos los campos", life: 1600 });
 			}
 		},
 		async getBackstage() {
@@ -348,7 +348,7 @@ export default {
 							this.$router.push("/login");
 							break;
 						default:
-							this.$toast.add({ severity: "error", summary: "Backstage", detail: "Sucedió un problema", life: 1600 });
+							this.$toast.add({group:"appBar", severity: "error", summary: "Backstage", detail: "Sucedió un problema", life: 1600 });
 							console.log("Error: ", error);
 							break;
 					}
@@ -367,7 +367,7 @@ export default {
 					}
 				)
 				.then((r) => {
-					this.$toast.add({
+					this.$toast.add({group:"appBar",
 						severity: "success",
 						summary: "Estado backstage",
 						detail: r.data ? "Estado cambiado correctamente" : "No se pudo cambiar el estado",
@@ -382,7 +382,7 @@ export default {
 							this.$router.push("/login");
 							break;
 						default:
-							this.$toast.add({ severity: "error", summary: `Sucedió un problema`, detail: error.response.data.message, life: 1500 });
+							this.$toast.add({group:"appBar", severity: "error", summary: `Sucedió un problema`, detail: error.response.data.message, life: 1500 });
 							console.log("Error: ", error);
 							break;
 					}

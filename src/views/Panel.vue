@@ -52,6 +52,8 @@
 				</Message>
 			</div>
 		</div>
+		<!-- Configuración del confirm globalmente -->
+		<ConfirmDialog group="global" />
 	</div>
 </template>
 <script>

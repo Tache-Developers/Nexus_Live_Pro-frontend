@@ -310,6 +310,7 @@ export default {
 		confirmEliminarReunion(reunion = null) {
 			if (reunion != null) {
 				this.$confirm.require({
+					group:"global",
 					message: `¿Está seguro de eliminar esta reunión?`,
 					header: "Eliminar reunión",
 					icon: "pi pi-exclamation-triangle",
