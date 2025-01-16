@@ -300,7 +300,6 @@ export default {
 				});
 		},
 		async getCreadores() {
-			this.loadingData = true;
 			await axios
 				.get(`${this.API}/usuario`, this.token)
 				.then((resp) => {
@@ -335,6 +334,11 @@ export default {
 							break;
 					}
 				});
+		},
+		async cargarDatos() {
+			this.loadingData = true;
+			await this.getTablas();
+			await this.getCreadores();
 			this.loadingData = false;
 		},
 	},
@@ -362,8 +366,7 @@ export default {
 		}, */
 		mostrar_modal(newValue) {
 			if (newValue) {
-				this.getTablas();
-				this.getCreadores();
+				this.cargarDatos();
 			}
 			this.modalAddCreadores = newValue;
 		},
