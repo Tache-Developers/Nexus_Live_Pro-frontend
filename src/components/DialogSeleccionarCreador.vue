@@ -263,6 +263,8 @@ export default {
 			this.nombreCreadoresEditor = null;
 			this.creadoresSelect = [];
 			this.modoAdd = "por_criterio";
+			this.filtroSelect.max = null;
+			this.filtroSelect.min = null;
 			this.$emit("cerrarDialog");
 		},
 		async getTablas() {
