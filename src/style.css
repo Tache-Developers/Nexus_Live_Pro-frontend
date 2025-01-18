@@ -33,54 +33,10 @@ p {
   color: white;
 }
 
-.top-creadores>.top-seleccionado>div>.lista-creadores::-webkit-scrollbar,
-.top-creadores>.top-agencias>div>.lista-creadores::-webkit-scrollbar,
-.item_novedad>.descripcion::-webkit-scrollbar {
-  width: 8px;
-}
-
-.top-creadores>.top-seleccionado>div>.lista-creadores::-webkit-scrollbar-track,
-.top-creadores>.top-agencias>div>.lista-creadores::-webkit-scrollbar-track,
-.item_novedad>.descripcion::-webkit-scrollbar-track {
-  background: #555;
-  cursor: pointer;
-}
-
-.top-creadores>.top-seleccionado>div>.lista-creadores::-webkit-scrollbar-thumb,
-.top-creadores>.top-agencias>div>.lista-creadores::-webkit-scrollbar-thumb,
-.item_novedad>.descripcion::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-  background: #5e951c;
-  cursor: pointer;
-}
-
-.top-creadores>.top-seleccionado>div>.lista-creadores::-webkit-scrollbar-thumb:hover,
-.top-creadores>.top-agencias>div>.lista-creadores::-webkit-scrollbar-thumb:hover,
-.item_novedad>.descripcion::-webkit-scrollbar-thumb:hover {
-  background: #84dc09;
-}
-
-.top-creadores>.top-seleccionado>div>.lista-creadores::-webkit-scrollbar-button,
-.top-creadores>.top-agencias>div>.lista-creadores::-webkit-scrollbar-button,
-.item_novedad>.descripcion::-webkit-scrollbar-button {
-  background: rgb(190, 177, 177);
-  cursor: pointer;
-}
-
-.top-creadores>.top-seleccionado>div>.lista-creadores::-webkit-scrollbar-button:increment,
-.top-creadores>.top-agencias>div>.lista-creadores::-webkit-scrollbar-button:increment,
-.item_novedad>.descripcion::-webkit-scrollbar-button:increment {
-  border-bottom-right-radius: 10px;
-  border-bottom-left-radius: 10px;
-  border-top-right-radius: 0 !important;
-  border-top-left-radius: 0 !important;
-}
-
-.top-creadores>.top-seleccionado>div>.lista-creadores::-webkit-scrollbar-button:decrement,
-.top-creadores>.top-agencias>div>.lista-creadores::-webkit-scrollbar-button:decrement,
-.item_novedad>.descripcion::-webkit-scrollbar-button:decrement {
-  border-top-right-radius: 10px;
-  border-top-left-radius: 10px;
-  border-bottom-right-radius: 0 !important;
-  border-bottom-left-radius: 0 !important;
+.top-creadores>.top-seleccionado>div>.lista-creadores,
+.top-creadores>.top-agencias>div>.lista-creadores,
+.item_novedad>.descripcion,
+.reuniones>.contenedor>.detalle-progreso>.info-total>.detalle-reuniones {
+  scrollbar-width: thin;
+  scrollbar-color: #5e951c #555;
 }

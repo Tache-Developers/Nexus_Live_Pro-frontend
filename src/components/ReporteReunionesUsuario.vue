@@ -81,6 +81,15 @@
 							alt="Completado"
 							class="total"
 						/>
+						<img
+							src="/assets/img/reuniones/progreso-fallido.png"
+							alt="Fallido"
+							class="total"
+							v-else-if="
+								miCalendario.reuniones_bonus_actual.every((r) => r.estado == 'Finalizada') &&
+								miCalendario.reuniones_asistencia.length < reunionesConfig.min_reuniones
+							"
+						/>
 						<img v-else src="/assets/img/reuniones/progreso-en-curso.png" alt="En curso" class="total" />
 					</div>
 				</div>
