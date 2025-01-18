@@ -60,12 +60,12 @@
 								</div>
 							</template>
 							<template #header>
-								<div class="flex flex-column gap-2" v-if="!loadingData && creadores_copia.length > 0">
+								<div class="flex flex-column gap-2" v-if="!loadingData">
 									<span class="p-input-icon-left">
 										<i class="pi pi-search" />
 										<InputText v-model="nombreBuscar" placeholder="Buscar por nombre" />
 									</span>
-									<div class="w-full flex flex-wrap gap-2 justify-content-end">
+									<div class="w-full flex flex-wrap gap-2 justify-content-end" v-if="creadores_copia.length > 0">
 										<Button label="Seleccionar todos" @click="selectCreadores('agregar')" severity="info" icon="pi pi-check" />
 										<Button label="Deseleccionar todos" @click="selectCreadores('quitar')" severity="danger" icon="pi pi-times" />
 									</div>

@@ -88,7 +88,7 @@
 		</div>
 		<div class="advertencia flex flex-column font-gamers">
 			<p class="m-0 text-center uppercase text-xl">
-				Completar las reuniones mínimas {{ miCalendario.reuniones_asistencia.length }} de {{ reunionesConfig.min_reuniones }}
+				Completar las reuniones mínimas {{ reunionesConfig.min_reuniones }} de {{ miCalendario.reuniones_bonus_actual.length }}
 			</p>
 			<span class="text-base text-center uppercase">Si no asiste a reuniones no podrá reclamar su premio.</span>
 		</div>
