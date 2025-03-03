@@ -1126,7 +1126,7 @@ export default {
 			modalVerCumplen: false,
 			idsMisPremios: [],
 			categorias: ["Rookie", "Pro", "Pro+", "Veteran"],
-			miTablaSeleccionado: { tabla: {}, bonus_cumplidos: [] },
+			miTablaSeleccionado: { tabla: {}, bonus_cumplidos: [], bonus_reclamados:[] },
 			criterios: [
 				{ label: "Horas", value: "horas" },
 				{ label: "Diamantes", value: "diamantes" },
