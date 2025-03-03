@@ -77,15 +77,21 @@
 									>
 										Faltan reuniones
 									</div>
+									<div class="aplica color-rojo" v-else-if="miTablaSeleccionado.bonus_reclamados.some((b) => b.nivel === props.data.nivel)">
+										{{ getMessageBono(props.data.nivel) }}
+									</div>
 									<div
-										v-else-if="miTablaSeleccionado.bonus_cumplidos.some((b) => b.nivel === props.data.nivel)"
+										v-else-if="
+											miTablaSeleccionado.bonus_cumplidos.some((b) => b.nivel === props.data.nivel) &&
+											miTablaSeleccionado.bonus_reclamados.length == 0
+										"
 										class="aplica cursor-pointer color-verde"
 										v-tooltip.top="'Clic para reclamar el bono'"
 										@click="reclamarBonoSeleccionado(props.data.nivel)"
 									>
 										Reclamar
 									</div>
-									<div class="aplica color-rojo" v-else>{{ getMessageBono(props.data.nivel) }}</div>
+									<div class="aplica color-rojo" v-else>No aplica</div>
 								</template>
 							</Column>
 						</DataTable>
@@ -1774,7 +1780,7 @@ export default {
 			} else {
 				await axios
 					.put(`${this.API}/bonus/activar-bonus-generales`, {}, this.token)
-					.then(async(resp) => {
+					.then(async (resp) => {
 						if (resp.data.cambio) {
 							await this.getTotalPagar();
 							await this.getConfigBonus();
@@ -1807,7 +1813,7 @@ export default {
 			if (this.configBonus.bonus_categoria) {
 				await axios
 					.put(`${this.API}/bonus/desactivar-bonus-categorias`, {}, this.token)
-					.then(async(resp) => {
+					.then(async (resp) => {
 						if (resp.data.cambio) {
 							await this.getTotalPagar();
 							await this.getConfigBonus();
@@ -1836,7 +1842,7 @@ export default {
 			} else {
 				await axios
 					.put(`${this.API}/bonus/activar-bonus-categorias`, {}, this.token)
-					.then(async(resp) => {
+					.then(async (resp) => {
 						if (resp.data.cambio) {
 							await this.getTotalPagar();
 							await this.getConfigBonus();
@@ -2204,7 +2210,7 @@ export default {
 				const filas = body.querySelectorAll("tr");
 				filas.forEach((fila) => {
 					const primerTd = fila.querySelector("td");
-					if (["Exclusivo","Sí"].includes(primerTd.innerText)) {
+					if (["Exclusivo", "Sí"].includes(primerTd.innerText)) {
 						const divAntes = document.createElement("div");
 						divAntes.classList.add("resaltar-exclusivo");
 						const divDespues = document.createElement("div");
@@ -2310,7 +2316,7 @@ export default {
 		await this.getConfigBonus();
 		await this.getBonosAgrupadosCategoria();
 		await this.obtenerBonus();
-		this.activePanel=0;
+		this.activePanel = 0;
 		this.actualizarPagar();
 		await this.getMultiplicador();
 		setTimeout(() => {
