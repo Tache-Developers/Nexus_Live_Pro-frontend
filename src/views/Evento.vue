@@ -198,9 +198,10 @@ export default {
         changeCreador(grupo) {
             if (grupo != 'Todos') {
                 if (grupo.length == 1) {
+                     this.grupoMostrado = grupo;
                     for (let i = 0; i < this.arrayCreadores.length; i++) {
                         if (this.arrayCreadores[i]._id === grupo) {
-                            this.grupoMostrado = grupo;
+                           
                             this.creadores = [];
                             this.creadores = this.arrayCreadores[i].usuarios;
                         }
@@ -229,7 +230,7 @@ export default {
                 }
                 this.all = false;
             } else {
-                this.creadores = [...this.arrayCreadores[0].usuarios, ...this.arrayCreadores[1].usuarios, ...this.arrayCreadores[2].usuarios];
+                this.creadores = [].concat(this.arrayCreadores.flatMap((grupo) => grupo.usuarios));
                 this.creadores.sort((a, b) => b.diamantes_mes_actual - a.diamantes_mes_actual);
                 this.top3 = this.creadores.slice(0, 3);
                 this.all = true;
