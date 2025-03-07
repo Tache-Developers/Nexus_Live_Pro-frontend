@@ -199,7 +199,7 @@ export default {
 	methods: {
 		isOtraTabla(usuario = null) {
 			if (usuario != null) {
-				const otraTabla = this.tablas.findIndex((tabla) => tabla._id != this.$props.id_current_tabla && tabla.creadores.includes(usuario));
+				const otraTabla = this.tablas.findIndex((tabla) => tabla._id != this.$props.id_current_tabla && tabla.creadores.includes(usuario) && tabla.estado == true);
 				return otraTabla > -1;
 			}
 			return false;
@@ -259,6 +259,7 @@ export default {
 			this.$emit("update:seleccionados", this.creadoresSelect);
 		},
 		cerrarDialog() {
+			this.nombreBuscar = null;
 			this.modalAddCreadores = false;
 			this.nombreCreadoresEditor = null;
 			this.creadoresSelect = [];

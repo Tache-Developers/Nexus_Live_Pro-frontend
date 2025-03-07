@@ -764,7 +764,7 @@ export default {
 						severity: !resp.data.error ? "success" : "error",
 						summary: "Cambiar estado",
 						detail: resp.data.message,
-						life: 1700,
+						life: !!resp.data.timer ? 1000000 : 1700,
 					});
 				});
 			}

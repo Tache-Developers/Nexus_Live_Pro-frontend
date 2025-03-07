@@ -142,7 +142,7 @@ export default {
 			if (this.miCalendario.reuniones.length > 0) {
 				const r = this.miCalendario.reuniones_bonus_actual.find((re) => re.estado == "Pendiente");
 				if (r != undefined) {
-					return `Reunión: ${r.fecha.slice(0, 10)} ${r.fecha.slice(11, 16)}`;
+					return `Reunión: ${this.formatearFecha(r.fecha)}`;
 				}
 			}
 			return "Sin reuniones";
@@ -155,6 +155,17 @@ export default {
 				}
 			}
 			return "info";
+		},
+		formatearFecha(fechaISO) {
+			const fecha = new Date(fechaISO);
+
+			const anio = fecha.getFullYear();
+			const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+			const dia = String(fecha.getDate()).padStart(2, "0");
+			const horas = String(fecha.getHours()).padStart(2, "0");
+			const minutos = String(fecha.getMinutes()).padStart(2, "0");
+
+			return `${anio}-${mes}-${dia} ${horas}:${minutos}`;
 		},
 		async clickFecha(dataCalendar) {
 			if (dataCalendar.attributes.length > 0) {
