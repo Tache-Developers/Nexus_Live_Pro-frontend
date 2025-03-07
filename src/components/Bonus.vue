@@ -3,7 +3,7 @@
 		<Toast />
 		<div class="usuario" v-if="!admin">
 			<PerfilUsuario />
-			<ReporteReunionesUsuario />
+			<ReporteReunionesUsuario v-if="!creadorExcluidoReuniones" />
 			<Panel class="Bonus">
 				<template #header>
 					<div class="flex items-center gap-2 flex-end w-full justify-content-center">
@@ -1139,6 +1139,7 @@ export default {
 				activo: false,
 				min_reuniones: 0,
 			},
+			creadorExcluidoReuniones: false,
 		};
 	},
 	methods: {
@@ -2243,7 +2244,6 @@ export default {
 			});
 		},
 		async getMiCalendario() {
-			const d = new Date();
 			await axios
 				.get(`${this.API}/reunion/usuario/${this.store.getId()}`, this.token)
 				.then((resp) => {
@@ -2279,6 +2279,40 @@ export default {
 					}
 				});
 		},
+		async getIfCreadorExcluidoReuniones() {
+			await axios
+				.get(`${this.API}/reunion/usuario/${this.store.getId()}/is-excluido`, this.token)
+				.then((resp) => {
+					this.creadorExcluidoReuniones = resp.data;
+				})
+				.catch((error) => {
+					switch (error.response.data.statusCode) {
+						case 400:
+							//Bad Request
+							this.$toast.add({
+								severity: "error",
+								summary: "Obtener creador excluido",
+								detail: "Formato de los datos incorrecto",
+								life: 1600,
+							});
+							break;
+						case 401:
+							//Se le termino la sesión
+							this.store.clearUser();
+							this.$router.push("/login");
+							break;
+						default:
+							this.$toast.add({
+								severity: "error",
+								summary: "Obtener creador excluido",
+								detail: "Sucedió un error, comuníquese con soporte",
+								life: 1600,
+							});
+							console.log("Error: ", error);
+							break;
+					}
+				});
+		},
 	},
 	async created() {
 		this.store = useStoreEvento();
@@ -2295,8 +2329,11 @@ export default {
 			this.usuario = this.store.getUsuario();
 			await this.getMisPremiosActuales();
 			await this.getUsuario();
-			await this.getConfigReuniones();
-			await this.getMiCalendario();
+			await this.getIfCreadorExcluidoReuniones();
+			if (!this.creadorExcluidoReuniones) {
+				await this.getConfigReuniones();
+				await this.getMiCalendario();
+			}
 			this.estadisticas.dias = parseInt(this.usuario.dias_validos_mes_actual);
 			this.estadisticas.horas = this.usuario.last_live_duration_mes_actual.includes("h")
 				? parseInt(this.usuario.last_live_duration_mes_actual.split("h")[0])

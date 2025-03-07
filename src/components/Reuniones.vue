@@ -6,6 +6,13 @@
 					<h1 class="m-0">Reuniones</h1>
 					<div class="botones flex gap-2 flex-wrap">
 						<Button
+							v-if="paqueteReunionesConfig.activo"
+							icon="pi pi-user-minus"
+							label="Excluir creadores"
+							severity="info"
+							@click="modalExcluirCreadores = true"
+						/>
+						<Button
 							:icon="`pi ${paqueteReunionesConfig.activo ? 'pi-unlock' : 'pi-lock-open'}`"
 							:label="`${paqueteReunionesConfig.activo ? 'Desactivar' : 'Activar'} reuniones`"
 							:severity="paqueteReunionesConfig.activo ? 'success' : 'danger'"
@@ -225,14 +232,34 @@
 				<Button label="Guardar" :disabled="btnCrear" @click="configReuniones" />
 			</template>
 		</Dialog>
+		<Dialog
+			v-model:visible="modalExcluirCreadores"
+			header="Excluir creadores de reuniones"
+			:style="{ width: '50vw' }"
+			:breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
+			position="center"
+			:modal="true"
+			:draggable="false"
+			maximizable
+			@hide="modalExcluirCreadores = false"
+		>
+			<ExcluirCreadorReuniones />
+			<template #footer>
+				<Button label="Cerrar" @click="modalExcluirCreadores = false" autofocus text severity="danger" />
+			</template>
+		</Dialog>
 	</div>
 </template>
 <script>
 import axios from "axios";
 import { useStoreEvento } from "../store";
 import { FilterMatchMode, FilterOperator } from "primevue/api";
+import ExcluirCreadorReuniones from "./ExcluirCreadorReuniones.vue";
 
 export default {
+	components:{
+		ExcluirCreadorReuniones
+	},
 	data: () => ({
 		API: import.meta.env.VITE_APP_API,
 		store: null,
@@ -253,6 +280,7 @@ export default {
 		},
 		modalCrearReunion: false,
 		modalReunionesConfig: false,
+		modalExcluirCreadores: false,
 		btnCrear: false,
 		paqueteReunionesConfig: {
 			min_reuniones: 0,
@@ -310,7 +338,7 @@ export default {
 		confirmEliminarReunion(reunion = null) {
 			if (reunion != null) {
 				this.$confirm.require({
-					group:"global",
+					group: "global",
 					message: `¿Está seguro de eliminar esta reunión?`,
 					header: "Eliminar reunión",
 					icon: "pi pi-exclamation-triangle",
