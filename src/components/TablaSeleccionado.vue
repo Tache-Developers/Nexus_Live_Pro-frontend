@@ -232,7 +232,11 @@
 						</span>
 					</div>
 				</template>
-				<Column field="usuario" header="Creador" />
+				<Column field="usuario" header="Creador">
+					<template #body="props">
+						<div v-html="props.data.usuario" />
+					</template>
+				</Column>
 			</DataTable>
 			<template #footer>
 				<Button label="Cerrar" @click="modalVerCreadores = false" text severity="danger" />
@@ -941,9 +945,28 @@ export default {
 			if (tabla != null) {
 				const t = this.tablas.find((ta) => ta._id == tabla);
 				if (t != undefined) {
-					this.creadoresSeleccionados = this.creadores.filter((c) => {
-						return t.creadores.includes(c._id);
-					});
+					this.creadoresSeleccionados = this.creadores
+						.filter((c) => {
+							return t.creadores.includes(c._id);
+						})
+						.map((c) => {
+							const otrasTablasDesactivas = this.tablas
+								.filter((tab) => tab._id != t._id && tab.creadores.includes(c._id) && !tab.estado)
+								.map((ot) => `<span class="text-red-500">${ot.nombre}</span>`)
+								.join(" - ");
+							const otrasTablasActivas = this.tablas
+								.filter((tab) => tab._id != t._id && tab.creadores.includes(c._id) && tab.estado)
+								.map((ot) => `<span class="text-primary-500">${ot.nombre}</span>`)
+								.join(" - ");
+							let usuario =
+								otrasTablasDesactivas.length > 0 || otrasTablasActivas.length > 0
+									? `<span class="text-orange-500">${c.usuario}</span> - `
+									: c.usuario;
+							usuario += otrasTablasActivas.length > 0 ? `${otrasTablasActivas} - ${otrasTablasDesactivas}` : otrasTablasDesactivas;
+							return {
+								usuario,
+							};
+						});
 					this.modalVerCreadores = true;
 				}
 			}
