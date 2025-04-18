@@ -738,9 +738,29 @@ export default {
 	computed: {
 		getCantReunionesMesActual() {
 			const d = new Date();
-			return this.reuniones.filter((reunion) =>
-				reunion.fecha.startsWith(`${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`)
-			).length;
+			const anio_mes_actual = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`;
+			const d_sig = new Date();
+			const d_ant = new Date();
+			d_sig.setMonth(d.getMonth() + 1);
+			d_ant.setMonth(d.getMonth() - 1);
+
+			const anio_mes_sig = `${d_sig.getFullYear()}-${(d_sig.getMonth() + 1).toString().padStart(2, "0")}`;
+			const anio_mes_ant = `${d_ant.getFullYear()}-${(d_ant.getMonth() + 1).toString().padStart(2, "0")}`;
+			return this.reuniones.filter((reunion) => {
+				const fechaReunion = new Date(reunion.fecha);
+				if (d.getDate() > 3) {
+					return (
+						(reunion.fecha.startsWith(anio_mes_actual) && fechaReunion.getDate() > 3) ||
+						(reunion.fecha.startsWith(anio_mes_sig) && fechaReunion.getDate() <= 3)
+					);
+				} else if (
+					(reunion.fecha.startsWith(anio_mes_ant) && fechaReunion.getDate() > 3) ||
+					(reunion.fecha.startsWith(anio_mes_actual) && fechaReunion.getDate() <= 3)
+				) {
+					return true;
+				}
+				return false;
+			}).length;
 		},
 	},
 	async created() {
