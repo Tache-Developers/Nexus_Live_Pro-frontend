@@ -585,6 +585,23 @@ export default {
 					icon: "pi pi-dollar",
 					route: "/duckracer",
 				},
+				{ separator: true },
+				{
+					label: "Herramientas Live",
+					items: [
+						{
+							label: "Conectar Live",
+							icon: "pi pi-video",
+							route: "/panel/live",
+						},
+						{ label: "Alertas de sonido", icon: "pi pi-volume-up", route: "/panel/alertas" },
+						{
+							label: "Chat Texto a Voz",
+							icon: "pi pi-arrow-right-arrow-left",
+							route: "/panel/tts",
+						},
+					],
+				},
 				{
 					separator: true,
 				},
