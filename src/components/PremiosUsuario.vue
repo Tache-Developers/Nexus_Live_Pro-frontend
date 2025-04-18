@@ -30,7 +30,10 @@
 						<p class="m-0" v-if="['Bonus', 'Efectivo', 'SaldoApi'].includes(props.data.tipo_premio) || !isImg(props.data.premio)">
 							{{ props.data.premio }}
 						</p>
-						<Image v-else :src="props.data.premio" alt="Imagen del premio" width="120" heigth="100" imageClass="border-round" preview />
+						<div class="flex flex-column gap-1 w-max align-items-center" v-else>
+							<Image :src="props.data.premio" alt="Imagen del premio" width="120" heigth="100" imageClass="border-round" preview />
+							<span class="font-bold">{{ props.data.descripcion_regalo }}</span>
+						</div>
 					</div>
 				</template>
 			</Column>

@@ -28,7 +28,10 @@
 					<p class="m-0" v-if="['Bonus', 'Efectivo', 'SaldoApi'].includes(props.data.tipo_premio) || !isImg(props.data.premio)">
 						{{ props.data.premio }}
 					</p>
-					<Image v-else :src="props.data.premio" alt="Imagen del premio" width="120" heigth="100" imageClass="border-round" preview />
+					<div class="flex flex-column gap-1 w-max align-items-center" v-else>
+						<Image :src="props.data.premio" alt="Imagen del premio" width="120" heigth="100" imageClass="border-round" preview />
+						<span class="font-bold">{{ props.data.descripcion_regalo }}</span>
+					</div>
 				</template>
 			</Column>
 			<Column field="descripcion" header="Descripción"></Column>
@@ -206,10 +209,11 @@
 			</div>
 			<div v-else>
 				<div
-					class="flex flex-wrap gap-2 justify-content-center"
+					class="flex flex-column gap-1 align-items-center"
 					v-if="datosTransferencia.transferencia.regalos.length == 0 && isImg(datosTransferencia.premio)"
 				>
 					<Image :src="datosTransferencia.premio" alt="Regalo" width="250" heigth="220" preview imageClass="border-round" />
+					<span class="font-bold">{{ datosTransferencia.descripcion_regalo }}</span>
 				</div>
 				<Galleria
 					v-else
@@ -369,6 +373,7 @@ export default {
 										id_concurso: premio.id_concurso,
 										premio: premio.premio,
 										descripcion: premio.descripcion,
+										descripcion_regalo: premio.descripcion_regalo,
 										fecha_obtenido: fecha,
 										fecha_unica: premio.fecha_obtenido,
 										tipo_premio: premio.tipo_premio,
