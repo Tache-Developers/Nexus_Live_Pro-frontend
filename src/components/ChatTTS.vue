@@ -528,6 +528,7 @@ export default {
 			return;
 		}
 		this.headers.headers.Authorization = `Bearer ${this.store.getToken()}`;
+		this.miTTS.usuario=this.store.getId();
 		await this.getVoicesTTS();
 		await this.getMiTTS();
 		this.usuarios_permitidos_config = [
