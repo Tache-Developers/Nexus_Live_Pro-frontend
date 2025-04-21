@@ -170,7 +170,7 @@
 
 <script>
 import axios from "axios";
-import { useStoreEvento } from "../store";
+import { useStoreEvento, useSocketStore } from "../store";
 import dialogMiPerfil from "./MiPerfil.vue";
 import dialogEditarPerfil from "./EditarPerfil.vue";
 import EventoEspecial from "./EventoEspecial.vue";
@@ -193,6 +193,7 @@ export default {
 	data: () => ({
 		API: import.meta.env.VITE_APP_API,
 		store: null,
+		storeSocket: null,
 		sinMenu: [],
 		itemsMenu: [],
 		itemsUsuario: [],
@@ -391,10 +392,33 @@ export default {
 		cerrarSesion() {
 			this.store.clearUser();
 			this.$router.push("/login");
+			//Limpiamos el store socket
+			localStorage.removeItem("liveConfig");
+			localStorage.removeItem("configAudioQueue");
+			this.storeSocket.limpiarQueueAudios("alertas");
+			this.storeSocket.limpiarQueueAudios("comentarios");
+			this.storeSocket.miTTS = {
+				usuario: null,
+				tipos_usuarios_permitidos: [],
+				lista_usuarios_permitidos: [], //Un objeto con usuario e isHabilitado
+				tipo_comentarios_permitidos: null,
+				comando_comentario_permitido: null,
+				max_top_gifters: 3, //Para cuándo el top gifters esté activado
+				voz_tts: null,
+				isActivo: false,
+				plantilla_mensaje: "{usuario} dice {comentario}",
+			};
+			this.storeSocket.misAlertas = { usuario: null, alertas: [], isActiva: false };
+			this.storeSocket.historial = [];
+			this.storeSocket.ultimosGifts = [];
+			this.storeSocket.notificaciones = [];
+			this.storeSocket.usuario_conectar = null;
+			this.storeSocket.disconnect();
 		},
 	},
 	async created() {
 		this.store = useStoreEvento();
+		this.storeSocket = useSocketStore();
 		const admin = this.store.isAdmin();
 		await this.getBackstage();
 		if (admin) {
@@ -474,6 +498,23 @@ export default {
 							label: "Deseos",
 							icon: "pi pi-gift",
 							route: "/panel/deseos",
+						},
+					],
+				},
+				{ separator: true },
+				{
+					label: "Herramientas Live",
+					items: [
+						{
+							label: "Conectar Live",
+							icon: "pi pi-video",
+							route: "/panel/live",
+						},
+						{ label: "Alertas de sonido", icon: "pi pi-volume-up", route: "/panel/alertas" },
+						{
+							label: "Chat Texto a Voz",
+							icon: "pi pi-arrow-right-arrow-left",
+							route: "/panel/tts",
 						},
 					],
 				},

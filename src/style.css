@@ -40,3 +40,21 @@ p {
   scrollbar-width: thin;
   scrollbar-color: #5e951c #555;
 }
+
+.animacion-estado {
+  animation: senalar 3s infinite ease;
+}
+
+@keyframes senalar {
+  0% {
+    transform: translateX(0px);
+  }
+
+  50% {
+    transform: translateX(30px);
+  }
+
+  100% {
+    transform: translateX(0px);
+  }
+}

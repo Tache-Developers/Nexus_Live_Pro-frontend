@@ -236,10 +236,7 @@ const routes = [
 				component: AlertasSonido,
 				beforeEnter: (to, from, next) => {
 					const store = useStoreEvento();
-					if (store.isActive()) {
-						return !store.isAdmin() ? next() : next(from);
-					}
-					return next("/login");
+					return store.isActive() ? next() : next("/login");
 				},
 			},
 			{
@@ -248,10 +245,7 @@ const routes = [
 				component: ChatTTS,
 				beforeEnter: (to, from, next) => {
 					const store = useStoreEvento();
-					if (store.isActive()) {
-						return !store.isAdmin() ? next() : next(from);
-					}
-					return next("/login");
+					return store.isActive() ? next() : next("/login");
 				},
 			},
 			{
@@ -260,10 +254,7 @@ const routes = [
 				component: EnLive,
 				beforeEnter: (to, from, next) => {
 					const store = useStoreEvento();
-					if (store.isActive()) {
-						return !store.isAdmin() ? next() : next(from);
-					}
-					return next("/login");
+					return store.isActive() ? next() : next("/login");
 				},
 			},
 		],

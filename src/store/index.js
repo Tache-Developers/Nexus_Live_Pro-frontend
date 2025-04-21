@@ -147,6 +147,7 @@ export const useAudioQueue = defineStore("audioQueue", {
 	state: () => ({
 		queue: [],
 		isPlaying: false,
+		currentAudio: null,
 	}),
 	actions: {
 		enqueue(audio) {
@@ -163,24 +164,29 @@ export const useAudioQueue = defineStore("audioQueue", {
 
 			this.isPlaying = true;
 			const current = this.queue.shift();
-			let audioElement;
 
 			if (current.isBase64) {
-				audioElement = new Audio(`data:audio/mp3;base64,${current.src}`);
+				this.currentAudio = new Audio(`data:audio/mp3;base64,${current.src}`);
 			} else {
-				audioElement = new Audio(current.src);
+				this.currentAudio = new Audio(current.src);
 			}
 
-			audioElement.volume = current.volume || 1;
+			this.currentAudio.volume = current.volume || 1;
 
-			audioElement.onended = () => this.playNext();
-
+			this.currentAudio.onended = () => this.playNext();
+			this.persistirAudioQueue();
 			try {
-				await audioElement.play();
+				await this.currentAudio.play();
 			} catch (error) {
 				console.error("Error reproduciendo audio:", error);
 				this.playNext();
 			}
+		},
+		persistirAudioQueue() {
+			const data = {
+				queue: this.queue,
+			};
+			localStorage.setItem("configAudioQueue", JSON.stringify(data));
 		},
 	},
 });
@@ -190,6 +196,7 @@ export const useSocketStore = defineStore("socket", {
 	state: () => ({
 		socket: null,
 		storeAudio: useAudioQueue(),
+		storeUsuario: useStoreEvento(),
 		isConnected: false,
 		API_SOCKET: "https://socket.samyflw.com",
 		API_TTS: import.meta.env.VITE_APP_API_TTS,
@@ -201,17 +208,19 @@ export const useSocketStore = defineStore("socket", {
 			comando_comentario_permitido: null,
 			max_top_gifters: 3, //Para cuándo el top gifters esté activado
 			voz_tts: null,
+			isActivo: false,
+			plantilla_mensaje: "{usuario} dice {comentario}",
 		},
-		misAlertas: { usuario: null, alertas: [] },
+		misAlertas: { usuario: null, alertas: [], isActiva: false },
 		historial: [],
 		ultimosGifts: [],
 		notificaciones: [],
+		usuario_conectar: null,
 	}),
 	actions: {
 		connect(query, configTTS, configAlertas) {
 			if (this.socket != null && this.socket.connected) return;
-			this.miTTS = configTTS;
-			this.misAlertas = configAlertas;
+			this.actualizarConfig(configTTS, configAlertas);
 			this.socket = io(this.API_SOCKET, {
 				transports: ["polling"],
 				autoConnect: false,
@@ -222,29 +231,31 @@ export const useSocketStore = defineStore("socket", {
 			this.socket.on("connect", () => {
 				this.isConnected = true;
 				console.log("Socket conectado");
+				this.persistirConfiguracion();
 			});
 
 			this.socket.on("disconnect", () => {
 				this.isConnected = false;
 				this.storeAudio.queue = [];
 				console.log("Socket desconectado");
+				this.persistirConfiguracion();
 			});
 
 			// Listeners
-			if (this.misAlertas.alertas.some((a) => a.disparador == "gift")) {
-				this.socket.on("gift", async (data) => {
-					// Solo procesamos si:
-					// 1. El gift es streakable (giftType === 1) Y el streak ha terminado (data.repeatEnd === true)
-					// 2. O si el gift NO es streakable (giftType !== 1)
-					if (data.giftType === 1 && !data.repeatEnd) return;
-					this.agregarNotificacion({
-						tipo: "gift",
-						summary: "Nuevo regalo 🎁",
-						detail: `${data.nickname} envió ${data.giftName} x${data.repeatCount}`,
-						severity: "info",
-					});
-					this.actualizarHistorial(data);
-					this.actualizarGiftsRecientes(data);
+			this.socket.on("gift", async (data) => {
+				// Solo procesamos si:
+				// 1. El gift es streakable (giftType === 1) Y el streak ha terminado (data.repeatEnd === true)
+				// 2. O si el gift NO es streakable (giftType !== 1)
+				if (data.giftType === 1 && !data.repeatEnd) return;
+				this.agregarNotificacion({
+					tipo: "gift",
+					summary: "Nuevo regalo 🎁",
+					detail: `${data.nickname} envió ${data.giftName} x${data.repeatCount}`,
+					severity: "info",
+				});
+				this.actualizarHistorial(data);
+				this.actualizarGiftsRecientes(data);
+				if (this.misAlertas.isActiva) {
 					const alerta = this.misAlertas.alertas
 						.filter((a) => a.disparador == "gift")
 						.find((a) => a.fuentes_disparador.includes(data.giftId));
@@ -260,10 +271,11 @@ export const useSocketStore = defineStore("socket", {
 						// Encolar sonido del regalo
 						this.storeAudio.enqueue(sonidoRegalo);
 					}
-				});
-			}
-			if (this.misAlertas.alertas.some((a) => a.disparador == "like")) {
-				this.socket.on("like", (data) => {
+				}
+			});
+
+			this.socket.on("like", (data) => {
+				if (this.misAlertas.isActiva) {
 					const alerta = this.misAlertas.alertas.filter((a) => a.disparador == "like");
 					if (alerta.length > 0) {
 						// Reproducir sonido del regalo
@@ -275,26 +287,31 @@ export const useSocketStore = defineStore("socket", {
 						};
 						this.storeAudio.enqueue(sonido);
 					}
-				});
-			}
+				}
+			});
 
 			this.socket.on("chat", async (data) => {
-				const alerta = this.misAlertas.alertas.filter((a) => a.disparador == "chat");
+				if (this.misAlertas.isActiva) {
+					const alerta = this.misAlertas.alertas.filter((a) => a.disparador == "chat");
 
-				if (alerta.length > 0) {
-					const sonido = {
-						type: "audio",
-						src: alerta[0].sonido,
-						isBase64: false,
-						volume: alerta[0].volumen || 1,
-					};
+					if (alerta.length > 0) {
+						const sonido = {
+							type: "audio",
+							src: alerta[0].sonido,
+							isBase64: false,
+							volume: alerta[0].volumen || 1,
+						};
 
-					this.storeAudio.enqueue(sonido);
+						this.storeAudio.enqueue(sonido);
+					}
 				}
 
-				if (this.puedeUsarTTS(data) && this.comentarioCumple(data.comment)[0]) {
+				if (this.puedeUsarTTS(data) && this.comentarioCumple(data.comment)[0] && this.miTTS.isActivo) {
 					try {
-						const texto = `${data.nickname} comentó: ${data.comment}`;
+						let texto = this.miTTS.plantilla_mensaje;
+						texto = texto.replaceAll("{usuario}", data.nickname);
+						texto = texto.replaceAll("{comentario}", data.comment);
+						//`${data.nickname} comentó: ${data.comment}`;
 						const res = await axios.post(`${this.API_TTS}/text-to-speech`, {
 							text: texto,
 							voice: this.miTTS.voz_tts,
@@ -312,8 +329,8 @@ export const useSocketStore = defineStore("socket", {
 				}
 			});
 
-			if (this.misAlertas.alertas.some((a) => a.disparador == "member")) {
-				this.socket.on("member", (data) => {
+			this.socket.on("member", (data) => {
+				if (this.misAlertas.isActiva) {
 					const alerta = this.misAlertas.alertas.filter((a) => a.disparador == "member");
 					if (alerta.length > 0) {
 						const sonido = {
@@ -324,10 +341,11 @@ export const useSocketStore = defineStore("socket", {
 						};
 						this.storeAudio.enqueue(sonido);
 					}
-				});
-			}
-			if (this.misAlertas.alertas.some((a) => a.disparador == "follow")) {
-				this.socket.on("follow", (data) => {
+				}
+			});
+
+			this.socket.on("follow", (data) => {
+				if (this.misAlertas.isActiva) {
 					const alerta = this.misAlertas.alertas.filter((a) => a.disparador == "follow");
 					if (alerta.length > 0) {
 						const sonido = {
@@ -338,10 +356,11 @@ export const useSocketStore = defineStore("socket", {
 						};
 						this.storeAudio.enqueue(sonido);
 					}
-				});
-			}
-			if (this.misAlertas.alertas.some((a) => a.disparador == "subscribe")) {
-				this.socket.on("subscribe", (data) => {
+				}
+			});
+
+			this.socket.on("subscribe", (data) => {
+				if (this.misAlertas.isActiva) {
 					const alerta = this.misAlertas.alertas.filter((a) => a.disparador == "subscribe");
 					if (alerta.length > 0) {
 						const sonido = {
@@ -352,10 +371,11 @@ export const useSocketStore = defineStore("socket", {
 						};
 						this.storeAudio.enqueue(sonido);
 					}
-				});
-			}
-			if (this.misAlertas.alertas.some((a) => a.disparador == "share")) {
-				this.socket.on("share", (data) => {
+				}
+			});
+
+			this.socket.on("share", (data) => {
+				if (this.misAlertas.isActiva) {
 					const alerta = this.misAlertas.alertas.filter((a) => a.disparador == "share");
 					if (alerta.length > 0) {
 						const sonido = {
@@ -366,10 +386,11 @@ export const useSocketStore = defineStore("socket", {
 						};
 						this.storeAudio.enqueue(sonido);
 					}
-				});
-			}
-			if (this.misAlertas.alertas.some((a) => a.disparador == "emote")) {
-				this.socket.on("emote", (data) => {
+				}
+			});
+
+			this.socket.on("emote", (data) => {
+				if (this.misAlertas.isActiva) {
 					const alerta = this.misAlertas.alertas.filter((a) => a.disparador == "emote");
 					if (alerta.length > 0) {
 						const sonido = {
@@ -380,10 +401,11 @@ export const useSocketStore = defineStore("socket", {
 						};
 						this.storeAudio.enqueue(sonido);
 					}
-				});
-			}
-			if (this.misAlertas.alertas.some((a) => a.disparador == "envelope")) {
-				this.socket.on("envelope", (data) => {
+				}
+			});
+
+			this.socket.on("envelope", (data) => {
+				if (this.misAlertas.isActiva) {
 					const alerta = this.misAlertas.alertas.filter((a) => a.disparador == "envelope");
 					if (alerta.length > 0) {
 						const sonido = {
@@ -394,10 +416,11 @@ export const useSocketStore = defineStore("socket", {
 						};
 						this.storeAudio.enqueue(sonido);
 					}
-				});
-			}
-			if (this.misAlertas.alertas.some((a) => a.disparador == "questionNew")) {
-				this.socket.on("questionNew", (data) => {
+				}
+			});
+
+			this.socket.on("questionNew", (data) => {
+				if (this.misAlertas.isActiva) {
 					const alerta = this.misAlertas.alertas.filter((a) => a.disparador == "questionNew");
 					if (alerta.length > 0) {
 						const sonido = {
@@ -408,10 +431,11 @@ export const useSocketStore = defineStore("socket", {
 						};
 						this.storeAudio.enqueue(sonido);
 					}
-				});
-			}
-			if (this.misAlertas.alertas.some((a) => a.disparador == "linkMicBattle")) {
-				this.socket.on("linkMicBattle", (data) => {
+				}
+			});
+
+			this.socket.on("linkMicBattle", (data) => {
+				if (this.misAlertas.isActiva) {
 					const alerta = this.misAlertas.alertas.filter((a) => a.disparador == "linkMicBattle");
 					if (alerta.length > 0) {
 						const sonido = {
@@ -422,14 +446,54 @@ export const useSocketStore = defineStore("socket", {
 						};
 						this.storeAudio.enqueue(sonido);
 					}
-				});
-			}
+				}
+			});
 
 			this.socket.connect();
 		},
-		actualizarConfig(configTTS, configAlertas) {
-			this.miTTS = configTTS;
-			this.misAlertas = configAlertas;
+		actualizarConfig(configTTS = null, configAlertas = null) {
+			if (configTTS != null) {
+				this.miTTS = configTTS;
+				if (!this.miTTS.isActivo) {
+					this.limpiarQueueAudios("comentarios");
+				}
+			}
+			if (configAlertas != null) {
+				this.misAlertas = configAlertas;
+				if (!this.misAlertas.isActiva) {
+					this.limpiarQueueAudios("alertas");
+				}
+			}
+			this.persistirConfiguracion();
+		},
+		getConfigLocal() {
+			try {
+				let configSocket = localStorage.liveConfig;
+
+				if (configSocket) {
+					configSocket = JSON.parse(configSocket);
+					//Verificamos si el socket estaba conectado
+					if (configSocket.isConnected) {
+						if (this.socket) {
+							this.disconnect();
+						}
+						const usuario = this.storeUsuario.isAdmin() ? configSocket.usuario_conectar : this.storeUsuario.getUsuario().usuario;
+						const f = new Date();
+						const id = `${usuario}_${f.getTime()}`;
+
+						this.connect({ name: usuario, id }, this.miTTS, this.misAlertas);
+					}
+				}
+				let configAudios = localStorage.configAudioQueue;
+				if (configAudios) {
+					configAudios = JSON.parse(configAudios);
+					this.storeAudio.isPlaying = false;
+					this.storeAudio.queue = [...this.storeAudio.queue];
+					this.storeAudio.playNext();
+				}
+			} catch (error) {
+				console.log("Error obteniendo la configuración del live:", error);
+			}
 		},
 		disconnect() {
 			if (this.socket && this.socket.connected) {
@@ -515,6 +579,25 @@ export const useSocketStore = defineStore("socket", {
 		},
 		eliminarNotificacion(id) {
 			this.notificaciones = this.notificaciones.filter((n) => n.id !== id);
+		},
+		limpiarQueueAudios(quitar = "alertas") {
+			//Si voy a quitar las alertas, entonces debo acceder a la propiedad type="tts" para quedar con los comentarios
+			this.storeAudio.queue = this.storeAudio.queue.filter((a) => {
+				return quitar == "alertas" ? a.type == "tts" : a.type == "audio";
+			});
+			if (this.storeAudio.currentAudio != null) {
+				this.storeAudio.currentAudio.pause();
+			}
+		},
+		persistirConfiguracion() {
+			const data = {
+				isConnected: this.isConnected,
+				miTTS: this.miTTS,
+				misAlertas: this.misAlertas,
+				usuario_conectar: this.usuario_conectar,
+			};
+
+			localStorage.setItem("liveConfig", JSON.stringify(data));
 		},
 	},
 });

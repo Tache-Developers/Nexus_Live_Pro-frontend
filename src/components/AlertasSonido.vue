@@ -34,6 +34,32 @@
 								/>
 							</div>
 						</div>
+						<div class="flex w-full flex-wrap gap-2 justify-content-between align-items-center">
+							<div class="flex flex-wrap gap-2 w-full mb-2">
+								<label
+									v-tooltip.top="'Debes habilitar esta opción para poder usar las alertas en el live'"
+									for="estado_config"
+									class="font-bold block cursor-pointer"
+								>
+									Habilitar alertas
+								</label>
+								<Checkbox
+									v-tooltip.top="'Debes habilitar esta opción para poder usar las alertas en el live'"
+									v-model="misAlertas.isActiva"
+									:binary="true"
+									@update:modelValue="actualizarEstado"
+									inputId="estado_config"
+								/>
+								<label
+									v-tooltip.top="'Debes habilitar esta opción para poder usar las alertas en el live'"
+									v-if="!misAlertas.isActiva"
+									for="estado_config"
+									class="font-bold block cursor-pointer animacion-estado"
+								>
+									👈🏻 Comienza aquí
+								</label>
+							</div>
+						</div>
 						<span class="p-input-icon-left w-full">
 							<i class="pi pi-search" />
 							<InputText v-model="filterAlertas['global'].value" placeholder="Buscar..." />
@@ -321,7 +347,7 @@
 </template>
 <script>
 import { FilterMatchMode, FilterOperator } from "primevue/api";
-import { useStoreEvento } from "../store";
+import {useSocketStore, useStoreEvento } from "../store";
 import axios from "axios";
 
 export default {
@@ -334,6 +360,7 @@ export default {
 			},
 		},
 		store: null,
+		storeSocket: null,
 		filterAlertas: {
 			global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 			name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
@@ -375,7 +402,7 @@ export default {
 		],
 		btnCrear: false,
 		current_audio: null,
-		misAlertas: { usuario: null, alertas: [] },
+		misAlertas: { usuario: null, alertas: [], isActiva: false },
 		gifts: [],
 		gifts_copia: [],
 		sonidos: [],
@@ -517,7 +544,9 @@ export default {
 			this.loadingAlertas = true;
 			try {
 				const resp = await axios.get(`${this.API}/alerta-sonido/usuario/${this.store.getId()}`, this.headers);
-				const alt = typeof resp.data != "object" ? { usuario: null, alertas: [] } : resp.data;
+				const alt = typeof resp.data != "object" ? { usuario: null, alertas: [], isActiva: false } : resp.data;
+				this.storeSocket.actualizarConfig(null, { ...alt, alertas: alt.alertas.filter((a) => a.isHabilitada == true) });
+				
 				this.misAlertas = { ...alt, alertas: alt.alertas.map((a) => ({ ...a, volumen: a.volumen * 100 })) };
 			} catch (error) {
 				switch (error.response.data.statusCode) {
@@ -908,16 +937,52 @@ export default {
 				}
 			}
 		},
+		async actualizarEstado() {
+			try {
+				const resp = await axios.put(`${this.API}/alerta-sonido/${this.store.getId()}/${this.misAlertas.isActiva}`, {}, this.headers);
+				this.$toast.add({
+					severity: resp.data.error ? "error" : "success",
+					summary: "Actualizar configuración",
+					detail: resp.data.message,
+					life: 1700,
+				});
+				if (!resp.data.error) {
+					await this.getMisAlertas();
+				}
+			} catch (error) {
+				switch (error.response.data.statusCode) {
+					case 401:
+						//Se le termino la sesión
+						this.store.clearUser();
+						this.$router.push("/login");
+						break;
+					default:
+						this.$toast.add({
+							severity: "error",
+							summary: "Actualizar configuración",
+							detail: "Sucedió un error, comuníquese con soporte",
+							life: 1600,
+						});
+						console.log("Error: ", error);
+						break;
+				}
+			}
+		},
 	},
 	async created() {
 		this.store = useStoreEvento();
 		if (!this.store.isActive()) {
 			return;
 		}
+		this.storeSocket = useSocketStore();
+		//Obtenemos la configuración local si la hay y conectamos el socket
+		this.storeSocket.getConfigLocal();
 		this.headers.headers.Authorization = `Bearer ${this.store.getToken()}`;
+		this.loadingAlertas = true;
 		await this.getGifts();
 		await this.getSonidos();
 		await this.getMisAlertas();
+		this.loadingAlertas = false;
 	},
 };
 </script>

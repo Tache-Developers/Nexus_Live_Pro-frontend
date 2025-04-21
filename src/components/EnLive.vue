@@ -83,6 +83,28 @@
 			</div>
 		</Panel>
 		<Toast position="bottom-right" group="toast_bottom" />
+		<Dialog
+			v-model:visible="modalUsuario"
+			header="Conectar a Live"
+			:style="{ width: '20rem' }"
+			:breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
+			position="center"
+			:draggable="false"
+			:pt="{
+				root: 'border-none',
+				mask: {
+					style: 'backdrop-filter: blur(2px)',
+				},
+			}"
+		>
+			<div class="flex w-full flex-wrap flex-column justify-content-center gap-1">
+				<label for="usuario">Usuario</label>
+				<InputText v-model="usuario_admin" id="usuario" placeholder="Nombre de usuario de TikTok" />
+			</div>
+			<template #footer>
+				<Button label="Conectar" @click="conectarLive" autofocus severity="success" />
+			</template>
+		</Dialog>
 	</div>
 </template>
 <script>
@@ -100,23 +122,27 @@ export default {
 		storeSocket: null,
 		store: null,
 		expandedHistorial: {},
+		modalUsuario: false,
 		interval: null,
 		miTTS: {
 			usuario: null,
+			isActivo: false,
 			tipos_usuarios_permitidos: [],
 			lista_usuarios_permitidos: [], //Un objeto con usuario e isHabilitado
 			tipo_comentarios_permitidos: null,
 			comando_comentario_permitido: null,
 			max_top_gifters: 3, //Para cuándo el top gifters esté activado
 			voz_tts: null,
+			plantilla_mensaje: "{usuario} dice {comentario}",
 		},
-		misAlertas: { usuario: null, alertas: [] },
+		misAlertas: { usuario: null, alertas: [], isActiva: false },
+		usuario_admin: null,
 	}),
 	methods: {
 		async getMisAlertas() {
 			try {
 				const resp = await axios.get(`${this.API}/alerta-sonido/usuario/${this.store.getId()}`, this.headers);
-				const alt = typeof resp.data != "object" ? { usuario: null, alertas: [] } : resp.data;
+				const alt = typeof resp.data != "object" ? { usuario: null, alertas: [], isActiva: false } : resp.data;
 				this.misAlertas = {
 					...alt,
 					alertas: alt.alertas.filter((a) => a.isHabilitada == true),
@@ -166,7 +192,19 @@ export default {
 			}
 		},
 		conectarLive() {
-			const name = this.store.getUsuario().usuario;
+			let name = this.store.getUsuario().usuario;
+			if (this.store.isAdmin()) {
+				if (this.usuario_admin == null) {
+					this.modalUsuario = true;
+					return;
+				} else {
+					this.modalUsuario = false;
+					name = this.usuario_admin;
+					this.usuario_admin = null;
+					this.storeSocket.usuario_conectar = name;
+					this.storeSocket.actualizarConfig();
+				}
+			}
 			const f = new Date();
 			const id = `${name}_${f.getTime()}`;
 			try {
@@ -208,12 +246,12 @@ export default {
 		}
 		this.storeSocket = useSocketStore();
 		this.headers.headers.Authorization = `Bearer ${this.store.getToken()}`;
-
+//Obtenemos la configuración local si la hay y conectamos el socket
+		this.storeSocket.getConfigLocal();
 		await this.getMiTTS();
 		await this.getMisAlertas();
-		if (this.storeSocket.isConnected) {
 			this.storeSocket.actualizarConfig(this.miTTS, this.misAlertas);
-		}
+		
 		this.interval = setInterval(() => {
 			const notificacion = this.storeSocket.notificaciones[0];
 			if (notificacion) {

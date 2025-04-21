@@ -6,8 +6,8 @@
 					<h1 class="m-0">Chat Texto a Voz</h1>
 				</div>
 			</template>
-			<div class="flex flex-wrap gap-6 align-items-center justify-content-center">
-				<Card style="width: 25rem; overflow: hidden" class="card-shadow">
+			<div class="flex flex-wrap gap-6 justify-content-center">
+				<Card style="width: 25rem; overflow: hidden" class="card-shadow h-min">
 					<template #title>Usuarios permitidos</template>
 					<template #subtitle>Debes seleccionar a los usuarios cuyas interacciones serán leídas durante el LIVE.</template>
 					<template #content>
@@ -32,7 +32,7 @@
 						</div>
 					</template>
 				</Card>
-				<Card style="width: 25rem; overflow: hidden" class="card-shadow">
+				<Card style="width: 25rem; overflow: hidden" class="card-shadow h-min">
 					<template #title>Tipos de comentarios</template>
 					<template #subtitle>Debes seleccionar qué tipo de comentarios deseas escuchar.</template>
 					<template #content>
@@ -61,10 +61,33 @@
 						</div>
 					</template>
 				</Card>
-				<Card style="width: 25rem; overflow: hidden" class="card-shadow">
-					<template #title>Configuración de Voz</template>
+				<Card style="width: 25rem; overflow: hidden" class="card-shadow h-min">
+					<template #title>Configuración general</template>
 					<template #content>
 						<div class="flex flex-column w-full gap-2">
+						<div class="flex flex-wrap gap-2 w-full mb-2">
+								<label
+									v-tooltip.top="'Debes habilitar esta opción para poder usar el texto a voz en el live'"
+									for="estado_config"
+									class="font-bold block cursor-pointer"
+								>
+									Habilitar
+								</label>
+								<Checkbox
+									v-tooltip.top="'Debes habilitar esta opción para poder usar el texto a voz en el live'"
+									v-model="miTTS.isActivo"
+									:binary="true"
+									inputId="estado_config"
+								/>
+								<label
+									v-tooltip.top="'Debes habilitar esta opción para poder usar el texto a voz en el live'"
+									v-if="!miTTS.isActivo"
+									for="estado_config"
+									class="font-bold block cursor-pointer animacion-estado"
+								>
+									👈🏻 Comienza aquí
+								</label>
+							</div>
 							<div class="flex flex-column gap-1 w-full">
 								<label for="idioma" class="font-bold block">Idioma</label>
 								<Dropdown
@@ -94,6 +117,31 @@
 							<div class="flex flex-column gap-2 w-full">
 								<InputText inputId="voces" v-model="texto" placeholder="Ingresa texto de prueba" />
 								<Button label="Escuchar" class="font-bold block text-white" @click="probarVoz" severity="secondary" outlined />
+							</div>
+						</div>
+					</template>
+				</Card>
+				<Card style="width: 22rem; overflow: hidden" class="card-shadow h-min">
+					<template #title>Ajustes avanzados</template>
+					<template #content>
+						<div class="flex flex-column w-full gap-2">
+							<div class="flex flex-column gap-1 w-full">
+								<label for="plantilla-lectura" class="font-bold block">Plantilla de mensajes</label>
+								<InputText
+									id="plantilla-lectura"
+									v-model="plantilla_mensaje"
+									size="small"
+									@blur="guardarConfiguracion(false, true)"
+									aria-describedby="help-plantilla"
+								/>
+								<small id="help-plantilla">
+									<b>Marcador de posición:</b>
+									{usuario} y {comentario}
+								</small>
+								<small>
+									<b>Ejemplo:</b>
+									{usuario} dice {comentario}
+								</small>
 							</div>
 						</div>
 					</template>
@@ -203,7 +251,7 @@
 <script>
 import { FilterMatchMode, FilterOperator } from "primevue/api";
 import axios from "axios";
-import { useStoreEvento } from "../store";
+import { useSocketStore, useStoreEvento } from "../store";
 export default {
 	data: () => ({
 		API: import.meta.env.VITE_APP_API,
@@ -214,6 +262,7 @@ export default {
 			},
 		},
 		store: null,
+		storeSocket: null,
 		filterCreadores: {
 			global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 			name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
@@ -229,14 +278,17 @@ export default {
 		],
 		miTTS: {
 			usuario: null,
+			isActivo: false,
 			tipos_usuarios_permitidos: [],
 			lista_usuarios_permitidos: [], //Un objeto con usuario e isHabilitado
 			tipo_comentarios_permitidos: null,
 			comando_comentario_permitido: null,
 			max_top_gifters: 3, //Para cuándo el top gifters esté activado
 			voz_tts: null,
+			plantilla_mensaje: "{usuario} dice {comentario}",
 		},
 		custom_comando: "!tts",
+		plantilla_mensaje: "{usuario} dice {comentario}",
 		is_getting_config: false,
 		paisTTS: null,
 		texto: null,
@@ -344,14 +396,30 @@ export default {
 			}
 			event.preventDefault();
 		},
-		async guardarConfiguracion(isBlur = false) {
+		isPlantillaValida(texto) {
+			// Busca todos los patrones con llaves, como {algo}
+			const placeholders = texto.match(/\{[^}]+\}/g);
+
+			// Si no hay ningún placeholder, es inválido
+			if (!placeholders) return false;
+
+			// Lista de valores permitidos
+			const permitidos = ["{usuario}", "{comentario}"];
+
+			// Verifica que todos los encontrados estén en la lista permitida
+			return placeholders.every((p) => permitidos.includes(p));
+		},
+		async guardarConfiguracion(isBlurComando = false, isBlurPlantilla = false) {
 			if (this.is_getting_config) {
 				return;
 			}
-			if (isBlur && this.miTTS.tipo_comentarios_permitidos == "comando") {
+			if (isBlurComando && this.miTTS.tipo_comentarios_permitidos == "comando") {
 				if (this.custom_comando == this.miTTS.comando_comentario_permitido) {
 					return;
 				}
+			}
+			if (isBlurPlantilla && this.plantilla_mensaje == this.miTTS.plantilla_mensaje) {
+				return;
 			}
 			try {
 				if (this.miTTS.tipos_usuarios_permitidos.length == 0) {
@@ -390,7 +458,26 @@ export default {
 					});
 					return;
 				}
+				if (this.plantilla_mensaje.trim().length == 0) {
+					this.$toast.add({
+						severity: "error",
+						summary: "Guardar configuración",
+						detail: "Debes configurar una plantilla de mensajes",
+						life: 1650,
+					});
+					return;
+				}
+				if (!this.isPlantillaValida(this.plantilla_mensaje)) {
+					this.$toast.add({
+						severity: "warn",
+						summary: "Guardar configuración",
+						detail: "Plantilla de mensajes mal configurada, los valores permitidos son: {usuario} o {comentario}",
+						life: 2500,
+					});
+					return;
+				}
 				const paquete = { ...this.miTTS, voz_tts: this.miTTS.voz_tts.ShortName };
+				paquete.plantilla_mensaje = this.plantilla_mensaje;
 				if (this.miTTS.tipo_comentarios_permitidos == "comando") {
 					paquete.comando_comentario_permitido = this.custom_comando;
 				}
@@ -440,11 +527,15 @@ export default {
 			try {
 				const resp = await axios.get(`${this.API}/tts/usuario/${this.store.getId()}`, this.headers);
 				if (typeof resp.data == "object") {
+					this.storeSocket.actualizarConfig({ ...resp.data }, null);
 					this.miTTS = resp.data;
 					this.miTTS.voz_tts = this.vocesTTS.find((v) => v.ShortName == resp.data.voz_tts);
 					this.paisTTS = this.paisesTTS.find((p) => p.locale == this.miTTS.voz_tts.Locale);
 					if (resp.data.comando_comentario_permitido != null) {
 						this.custom_comando = resp.data.comando_comentario_permitido;
+					}
+					if (resp.data.plantilla_mensaje != null && resp.data.plantilla_mensaje.length > 0) {
+						this.plantilla_mensaje = resp.data.plantilla_mensaje;
 					}
 				}
 			} catch (error) {
@@ -527,9 +618,12 @@ export default {
 		if (!this.store.isActive()) {
 			return;
 		}
+		this.storeSocket = useSocketStore();
+		//Obtenemos la configuración local si la hay y conectamos el socket
+		this.storeSocket.getConfigLocal();
 		this.headers.headers.Authorization = `Bearer ${this.store.getToken()}`;
-		this.miTTS.usuario=this.store.getId();
 		await this.getVoicesTTS();
+		this.miTTS.usuario=this.store.getId();
 		await this.getMiTTS();
 		this.usuarios_permitidos_config = [
 			{ label: "Todos los usuarios", value: "todos" },
@@ -558,7 +652,7 @@ export default {
 					return `Creadores habilitados: ${h.length}`;
 				},
 				call: () => {
-					const tabla = document.getElementById("tablaUsuariosEnabled");
+					const tabla = document.getElementById("dtUsuarios");
 					if (tabla) {
 						const yOffset = tabla.getBoundingClientRect().top + window.scrollY - 100;
 						window.scrollTo({ top: yOffset, behavior: "smooth" });
