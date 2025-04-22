@@ -305,13 +305,12 @@ export const useSocketStore = defineStore("socket", {
 						this.storeAudio.enqueue(sonido);
 					}
 				}
-
-				if (this.puedeUsarTTS(data) && this.comentarioCumple(data.comment)[0] && this.miTTS.isActivo) {
+				const comentario = this.comentarioCumple(data.comment);
+				if (this.puedeUsarTTS(data) && comentario[0] && this.miTTS.isActivo) {
 					try {
 						let texto = this.miTTS.plantilla_mensaje;
 						texto = texto.replaceAll("{usuario}", data.nickname);
-						texto = texto.replaceAll("{comentario}", data.comment);
-						//`${data.nickname} comentó: ${data.comment}`;
+						texto = texto.replaceAll("{comentario}", comentario[1]);
 						const res = await axios.post(`${this.API_TTS}/text-to-speech`, {
 							text: texto,
 							voice: this.miTTS.voz_tts,
