@@ -982,6 +982,10 @@ export default {
 		await this.getGifts();
 		await this.getSonidos();
 		await this.getMisAlertas();
+		if (!this.misAlertas.isActiva) {
+			this.misAlertas.isActiva = true;
+			await this.actualizarEstado();
+		}
 		this.loadingAlertas = false;
 	},
 };

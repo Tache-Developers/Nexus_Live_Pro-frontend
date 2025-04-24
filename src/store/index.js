@@ -221,6 +221,8 @@ export const useSocketStore = defineStore("socket", {
 		connect(query, configTTS, configAlertas) {
 			if (this.socket != null && this.socket.connected) return;
 			this.actualizarConfig(configTTS, configAlertas);
+			this.historial = [];
+			this.ultimosGifts = [];
 			this.socket = io(this.API_SOCKET, {
 				transports: ["polling"],
 				autoConnect: false,
@@ -246,7 +248,7 @@ export const useSocketStore = defineStore("socket", {
 				// Solo procesamos si:
 				// 1. El gift es streakable (giftType === 1) Y el streak ha terminado (data.repeatEnd === true)
 				// 2. O si el gift NO es streakable (giftType !== 1)
-				if (data.giftType === 1 && !data.repeatEnd) return;
+				if (!data.repeatEnd && data.groupId !== "0") return;
 				this.agregarNotificacion({
 					tipo: "gift",
 					summary: "Nuevo regalo 🎁",

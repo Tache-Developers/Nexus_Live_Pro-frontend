@@ -98,6 +98,8 @@
 									filter
 									optionLabel="nombre"
 									placeholder="Selecciona un idioma"
+									emptyFilterMessage="No se encontraron idiomas"
+									emptyMessage="Sin idiomas disponibles"
 								/>
 							</div>
 							<div class="flex flex-column gap-1 w-full">
@@ -110,6 +112,8 @@
 									filter
 									optionLabel="FriendlyName"
 									placeholder="Selecciona una voz"
+									emptyFilterMessage="No se encontraron voces"
+									emptyMessage="Sin voces disponibles"
 								/>
 							</div>
 							<Divider class="mb-0" />
@@ -345,6 +349,16 @@ export default {
 			{ locale: "zh-HK", nombre: "中文 (香港)", code: "HK" },
 			{ locale: "zh-TW", nombre: "中文 (台灣)", code: "TW" },
 		],
+		DEFAULT_VOICE_TTS: {
+			Name: "Microsoft Server Speech Text to Speech Voice (es-CO, GonzaloNeural)",
+			ShortName: "es-CO-GonzaloNeural",
+			Gender: "Male",
+			Locale: "es-CO",
+			SuggestedCodec: "audio-24khz-48kbitrate-mono-mp3",
+			FriendlyName: "Microsoft Gonzalo Online (Natural) - Spanish (Colombia)",
+			Status: "GA",
+			VoiceTag: { ContentCategories: ["General"], VoicePersonalities: ["Friendly", "Positive"] },
+		},
 	}),
 	methods: {
 		quitarUsuarioLista(usuario = null) {
@@ -537,6 +551,23 @@ export default {
 					if (resp.data.plantilla_mensaje != null && resp.data.plantilla_mensaje.length > 0) {
 						this.plantilla_mensaje = resp.data.plantilla_mensaje;
 					}
+				}else {
+					//Mando a crear configuración por defecto
+					this.is_getting_config = false;
+					this.miTTS = {
+						usuario: this.store.getId(),
+						isActivo: true,
+						tipos_usuarios_permitidos: ["todos"],
+						lista_usuarios_permitidos: [], //Un objeto con usuario e isHabilitado
+						tipo_comentarios_permitidos: "cualquiera",
+						comando_comentario_permitido: null,
+						max_top_gifters: 3, //Para cuándo el top gifters esté activado
+						voz_tts: this.DEFAULT_VOICE_TTS,
+						plantilla_mensaje: "{usuario} dice {comentario}",
+					};
+					setTimeout(() => {
+						this.is_getting_config = true;
+					}, 200);
 				}
 			} catch (error) {
 				switch (error.response.data.statusCode) {
@@ -558,7 +589,7 @@ export default {
 			}
 			setTimeout(() => {
 				this.is_getting_config = false;
-			}, 1200);
+			}, 1500);
 		},
 		async getVoicesTTS() {
 			try {
