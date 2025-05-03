@@ -312,6 +312,13 @@ export const useSocketStore = defineStore("socket", {
 				if (data.comment.length > 0) {
 					const comentario = this.comentarioCumple(data.comment);
 					if (this.puedeUsarTTS(data) && comentario[0] && this.miTTS.isActivo) {
+						if (this.ttsGenerados.some((tts) => tts.userId == data.userId && tts.comment == comentario[1])) {
+							return;
+						}
+						this.ttsGenerados.push({
+							userId: data.userId,
+							comment: comentario[1],
+						});
 						try {
 							let texto = this.miTTS.plantilla_mensaje;
 							texto = texto.replaceAll("{usuario}", data.nickname);
