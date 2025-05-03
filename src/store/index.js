@@ -216,6 +216,7 @@ export const useSocketStore = defineStore("socket", {
 		ultimosGifts: [],
 		notificaciones: [],
 		usuario_conectar: null,
+		ttsGenerados: [],
 	}),
 	actions: {
 		connect(query, configTTS, configAlertas) {
@@ -307,25 +308,28 @@ export const useSocketStore = defineStore("socket", {
 						this.storeAudio.enqueue(sonido);
 					}
 				}
-				const comentario = this.comentarioCumple(data.comment);
-				if (this.puedeUsarTTS(data) && comentario[0] && this.miTTS.isActivo) {
-					try {
-						let texto = this.miTTS.plantilla_mensaje;
-						texto = texto.replaceAll("{usuario}", data.nickname);
-						texto = texto.replaceAll("{comentario}", comentario[1]);
-						const res = await axios.post(`${this.API_TTS}/text-to-speech`, {
-							text: texto,
-							voice: this.miTTS.voz_tts,
-						});
+				data.comment = this.eliminarEmojis(data.comment).trim();
+				if (data.comment.length > 0) {
+					const comentario = this.comentarioCumple(data.comment);
+					if (this.puedeUsarTTS(data) && comentario[0] && this.miTTS.isActivo) {
+						try {
+							let texto = this.miTTS.plantilla_mensaje;
+							texto = texto.replaceAll("{usuario}", data.nickname);
+							texto = texto.replaceAll("{comentario}", comentario[1]);
+							const res = await axios.post(`${this.API_TTS}/text-to-speech`, {
+								text: texto,
+								voice: this.miTTS.voz_tts,
+							});
 
-						const audio = {
-							type: "tts",
-							src: res.data.audio_base64,
-							isBase64: true,
-						};
-						this.storeAudio.enqueue(audio);
-					} catch (error) {
-						console.error("Error al convertir texto a voz:", error);
+							const audio = {
+								type: "tts",
+								src: res.data.audio_base64,
+								isBase64: true,
+							};
+							this.storeAudio.enqueue(audio);
+						} catch (error) {
+							console.error("Error al convertir texto a voz:", error);
+						}
 					}
 				}
 			});
@@ -500,6 +504,7 @@ export const useSocketStore = defineStore("socket", {
 			if (this.socket && this.socket.connected) {
 				this.isConnected = false;
 				this.storeAudio.queue = [];
+				this.ttsGenerados = [];
 				this.socket.disconnect();
 			}
 		},
@@ -599,6 +604,12 @@ export const useSocketStore = defineStore("socket", {
 			};
 
 			localStorage.setItem("liveConfig", JSON.stringify(data));
+		},
+		eliminarEmojis(texto) {
+			return texto.replace(
+				/([\u2700-\u27BF]|[\uE000-\uF8FF]|\u24C2|\uD83C[\uDDE6-\uDDFF]|\uD83C[\uD000-\uDFFF]|\uD83D[\uDC00-\uDE4F]|\uD83D[\uDE80-\uDEFF]|\uD83E[\uDD00-\uDFFF]|\u200D|[\u2600-\u26FF]|\uFE0F|\uD83D[\uDC00-\uDFFF])/g,
+				""
+			);
 		},
 	},
 });
